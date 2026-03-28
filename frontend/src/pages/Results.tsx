@@ -1,6 +1,27 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import type { AgentMetrics, AnalysisResult } from "../types";
+import type { AgentInsight, AgentMetrics, AnalysisResult } from "../types";
+
+const FALLBACK_INSIGHTS: AgentInsight[] = [
+  {
+    icon: "auto_awesome",
+    title: "AI-Powered Assessment",
+    description:
+      "Our analysis combines satellite imagery, solar potential data, and building physics to deliver a comprehensive recommendation tailored to your site.",
+  },
+  {
+    icon: "savings",
+    title: "Optimized for ROI",
+    description:
+      "Projects are ranked by payback period and annual savings so you can prioritize the investments that deliver returns fastest.",
+  },
+  {
+    icon: "eco",
+    title: "Measurable Impact",
+    description:
+      "Every recommendation includes estimated CO₂ reductions and energy savings you can track and report to stakeholders.",
+  },
+];
 
 function parseMetrics(agentText: string): AgentMetrics | null {
   const match = agentText.match(/```json\s*([\s\S]*?)\s*```/);
@@ -229,42 +250,21 @@ export default function Results() {
               Why this is the best option
             </h2>
             <div className="space-y-6">
-              <div className="flex gap-5 group">
-                <div className="w-12 h-12 shrink-0 rounded-full bg-primary/10 flex items-center justify-center text-primary transition-transform group-hover:scale-110">
-                  <span className="material-symbols-outlined">bolt</span>
-                </div>
-                <div>
-                  <h3 className="font-bold text-lg mb-1">Peak-Shaving Efficiency</h3>
-                  <p className="text-on-surface-variant leading-relaxed">
-                    The storage integration allows you to avoid peak utility rates, cutting
-                    operational costs by 35% during high-demand hours.
-                  </p>
-                </div>
-              </div>
-              <div className="flex gap-5 group">
-                <div className="w-12 h-12 shrink-0 rounded-full bg-primary/10 flex items-center justify-center text-primary transition-transform group-hover:scale-110">
-                  <span className="material-symbols-outlined">shield_moon</span>
-                </div>
-                <div>
-                  <h3 className="font-bold text-lg mb-1">Energy Resilience</h3>
-                  <p className="text-on-surface-variant leading-relaxed">
-                    Maintain critical operations during grid failures. Your facility stays online
-                    without expensive diesel generator fuel costs.
-                  </p>
-                </div>
-              </div>
-              <div className="flex gap-5 group">
-                <div className="w-12 h-12 shrink-0 rounded-full bg-primary/10 flex items-center justify-center text-primary transition-transform group-hover:scale-110">
-                  <span className="material-symbols-outlined">trending_up</span>
-                </div>
-                <div>
-                  <h3 className="font-bold text-lg mb-1">Maximized ITC Benefits</h3>
-                  <p className="text-on-surface-variant leading-relaxed">
-                    Current legislation favors this combined stack, unlocking a 30% Investment Tax
-                    Credit for the entire project cost.
-                  </p>
-                </div>
-              </div>
+              {(m?.insights && m.insights.length > 0 ? m.insights : FALLBACK_INSIGHTS).map(
+                (insight, i) => (
+                  <div key={i} className="flex gap-5 group">
+                    <div className="w-12 h-12 shrink-0 rounded-full bg-primary/10 flex items-center justify-center text-primary transition-transform group-hover:scale-110">
+                      <span className="material-symbols-outlined">{insight.icon}</span>
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-lg mb-1">{insight.title}</h3>
+                      <p className="text-on-surface-variant leading-relaxed">
+                        {insight.description}
+                      </p>
+                    </div>
+                  </div>
+                )
+              )}
             </div>
           </div>
         </div>

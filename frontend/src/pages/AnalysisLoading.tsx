@@ -36,17 +36,7 @@ export default function AnalysisLoading() {
     const imageRaw = sessionStorage.getItem("buildingImage");
     const hasImage = !!imageRaw;
 
-    const buildingLines = [
-      form.buildingType !== "unknown" ? `Building type: ${form.buildingType}` : "",
-      form.roofType !== "unknown" ? `Roof type: ${form.roofType}` : "",
-      form.wallMaterial !== "unknown" ? `Wall material: ${form.wallMaterial}` : "",
-      form.windowType !== "unknown" ? `Window type: ${form.windowType}` : "",
-      form.footprintArea ? `Footprint area: ${form.footprintArea} m²` : "",
-      form.floorsCount ? `Floors: ${form.floorsCount}` : "",
-      form.floorHeight ? `Floor height: ${form.floorHeight} m` : "",
-    ].filter(Boolean);
-
-    const hasBuildingDetails = buildingLines.length > 0;
+    const hasFootprint = !!form.footprintArea;
 
     const promptText = [
       `Analyze this business for green financing eligibility:`,
@@ -57,11 +47,10 @@ export default function AnalysisLoading() {
       `Budget: ${form.estimatedBudget}`,
       form.sustainabilityGoal ? `Goal: ${form.sustainabilityGoal}` : "",
       ...(hasImage
-        ? [``, `IMPORTANT: A building photograph is attached. Analyze it visually to identify: wall finish material, wall structure, roof covering, window type, visible insulation signs, cracks, facade degradation, and thermal bridge risks. Use your observations to call the estimate_heat_loss tool with accurate visual feature parameters.`]
+        ? [``, `IMPORTANT: A building photograph is attached. Analyze it visually to identify: wall finish material, wall structure, roof covering, roof type, window type, visible insulation signs, cracks, facade degradation, thermal bridge risks, number of floors, and building type. Use your observations to call the estimate_heat_loss tool with accurate visual feature parameters.`]
         : []),
-      ...(hasBuildingDetails
-        ? [``, `Building details provided by the user:`, ...buildingLines,
-           ``, `Use the estimate_heat_loss tool with the building details above${hasImage ? " combined with your visual analysis" : ""}. Pass the user-provided values directly as tool arguments.`]
+      ...(hasFootprint
+        ? [``, `Ground floor area provided by the user: ${form.footprintArea} m². Pass this as footprint_area_m2 to estimate_heat_loss.`]
         : []),
       ``,
       `Provide: recommended financing path, estimated payback period, annual savings, CO2 reduction, and comparison of at least 3 project types.`,
@@ -79,8 +68,13 @@ export default function AnalysisLoading() {
       `  "annual_savings_usd": <best project annual savings USD or null>,`,
       `  "recommended_project": "<short project title or null>",`,
       `  "geometry_confidence": <0-1 or null>,`,
-      `  "site_stability_score": <satellite similarity score 0-1 or null>`,
+      `  "site_stability_score": <satellite similarity score 0-1 or null>,`,
+      `  "insights": [`,
+      `    {"icon": "<material symbol name>", "title": "<short benefit title>", "description": "<1-2 sentence explanation of why this matters for the business>"}`,
+      `  ]`,
       `}`,
+      ``,
+      `For "insights": provide exactly 3 compelling reasons why your recommended project is the best option for THIS specific business. Use relevant Material Symbols icon names (e.g. thermostat, solar_power, savings, eco, speed, shield, trending_down, construction, bolt, air). Make each insight specific to the analysis results — reference actual numbers, dominant loss sources, or site-specific findings. Do NOT use generic filler.`,
       "```",
     ]
       .filter(Boolean)

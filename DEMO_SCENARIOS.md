@@ -43,7 +43,7 @@ Open http://localhost:5173/ and click **Start**.
 | Budget | ~$30k |
 | Sustainability Goal | `Install solar panels on barn roof and assess land stability for organic certification` |
 
-**Step 2 — Building Details:** Skip (leave all fields on "unknown", no photo).
+**Step 2 — Building Details:** Skip (no photo, leave footprint area empty).
 
 ### What to expect
 
@@ -87,42 +87,39 @@ Open http://localhost:5173/ and click **Start**.
 | Field | Value |
 |---|---|
 | Building Photo | Upload `demo/demo_factory.png` |
-| Building Type | `office` |
-| Roof Type | `flat` |
-| Floors | `3` |
-| Footprint Area | `800` |
-| Floor Height | `3.2` |
-| Wall Material | Leave on `unknown` (let the AI identify from photo) |
-| Window Type | Leave on `unknown` (let the AI identify from photo) |
+| Ground Floor Area | `1200` m² |
+
+Everything else (building type, roof type, wall material, window type, floors, floor height) is identified by Gemini from the photo.
 
 ### What to expect
 
 - **Vision analysis:** Gemini examines the photo and identifies:
-  - Glass curtain wall facade with red accent panels
+  - Glass curtain wall facade with red accent panels → `glass_curtain` wall finish
   - Steel frame structure
-  - Flat roof (covering not visible)
+  - Flat roof (covering not visible) → `bitumen_membrane` assumed
   - Double-glazed windows (modern aluminum frames)
+  - 3 visible floors, estimated WWR ~0.65
   - No visible cracks, no degradation, no external insulation
   - Vision confidence ~0.8
-- **Heat-loss estimation:** Base heat loss **~101.7 kW** (range: 42.1–229.8 kW)
-  - Windows: ~34 kW (dominant — because glass curtain wall)
-  - Infiltration: ~31 kW
+- **Heat-loss estimation:** Base heat loss **~179 kW** (range: 52–529 kW)
+  - Infiltration: ~75 kW (dominant)
+  - Windows: ~53 kW (high due to glass curtain wall)
   - Walls: ~25 kW
   - Roof: ~12 kW
-  - Geometry confidence: 100% (because dimensions were provided)
+  - Geometry confidence: ~77% (footprint provided, floors estimated from photo, floor height defaulted)
 - **Satellite embedding:** Stability score ~0.95 (2017–2023) — very stable
-- **Solar API:** 111 panels, 218 m², ~45,770 kWh/yr (~45.8 MWh/yr), ~34.5 tons CO₂/yr offset
-- **Dynamic stat cards:** All four populated — Heat Loss 101.7 kW, Solar 45.8 MWh/yr, CO₂ 57.2 tons/yr, Site Stability 0.95
-- **Building Energy Profile:** Shows dominant loss source (windows), geometry confidence, payback (~6.6 yr), annual savings (~$15,255)
-- **Agent recommendation:** "Heat Loss Reduction (Infiltration & Windows)" — prioritizes envelope upgrades over solar due to faster payback (6.6 yr vs 8.2 yr)
+- **Solar API:** 111 panels, 218 m², ~44.4 MWh/yr, ~33.5 tons CO₂/yr offset
+- **Dynamic stat cards:** All four populated with real data from the agent's JSON output
+- **Building Energy Profile:** Shows dominant loss source, geometry confidence, payback (if calculable)
+- **Dynamic "Why this is the best option" insights:** 3 agent-generated reasons specific to the analysis (e.g. solar generation potential, carbon offset, energy savings)
 
 ### Key talking points
 
-- **Photo-to-analysis pipeline:** Upload a photo → AI identifies materials → physics-based heat-loss estimate. That's the "wow" moment.
+- **Photo-to-analysis pipeline:** Upload a photo + enter floor area → AI identifies materials → physics-based heat-loss estimate. That's the "wow" moment.
 - Agent used **three different tool categories** (satellite, solar, heat-loss) in one analysis
 - Gemini correctly identified **glass curtain wall** as the dominant heat-loss surface from the photo
-- Provided dimensions gave **100% geometry confidence** vs 37% without them
-- Agent recommended **envelope upgrades over solar** — data-driven, not generic advice
+- User only provided **one number** (floor area) — everything else came from the photo
+- Results page stat cards, building energy profile, and "why this is the best option" insights are all **dynamically generated** from the agent's structured JSON output
 - Recommended EU-relevant financing (green loans, sustainability-linked financing) — not US programs
 - Same system, completely different advice for different contexts
 
@@ -135,10 +132,10 @@ Open http://localhost:5173/ and click **Start**.
 | Photo uploaded | No | Yes (`demo/demo_factory.png`) |
 | Tools used | Satellite + Solar | Satellite + Solar + Heat-loss + Vision |
 | Dynamic stat cards | Solar + CO₂ + Stability | All 4 (Heat Loss + Solar + CO₂ + Stability) |
-| Primary recommendation | Phased solar + organic cert | Envelope upgrades (infiltration + windows) |
-| Fastest payback | N/A (over budget) | 6.6 years |
-| Annual savings | — | ~$15,255 |
-| CO₂ reduction | ~5 tons/yr | ~57 tons/yr (envelope) + ~35 tons/yr (solar) |
+| Primary recommendation | Phased solar + organic cert | Solar PV or envelope upgrades (varies by run) |
+| Fastest payback | N/A (over budget) | ~6–8 years (depends on recommendation) |
+| Annual savings | — | Varies — agent estimates based on analysis |
+| CO₂ reduction | ~5 tons/yr | ~33.5 tons/yr (solar) + envelope savings |
 | Financing referenced | USDA REAP grants | Green loans, sustainability-linked financing |
 | Region-specific | California net metering | Polish energy rates |
 
@@ -147,4 +144,4 @@ Open http://localhost:5173/ and click **Start**.
 ## Presentation story arc
 
 1. **Scenario 1** — "Here's a farm in California. We fill in an address and coordinates. The system pulls real satellite data and real solar rooftop data. It gives smart, region-specific advice." *(Baseline — shows the system is useful)*
-2. **Scenario 2** — "Now let's go harder. A factory in Warsaw. This time we upload a photo of the building. Watch what happens — the AI examines the facade, identifies glass curtain walls, and runs a physics-based heat-loss calculation. It combines that with satellite stability data and solar potential for a complete green-finance assessment from a single photo." *(Wow moment — multimodal AI + physics engine)*
+2. **Scenario 2** — "Now let's go harder. A factory in Warsaw. This time we upload a photo of the building and enter the floor area — that's it. Watch what happens — the AI examines the facade, identifies glass curtain walls, counts floors, and runs a physics-based heat-loss calculation. It combines that with satellite stability data and solar potential for a complete green-finance assessment from a single photo and one number." *(Wow moment — multimodal AI + physics engine)*

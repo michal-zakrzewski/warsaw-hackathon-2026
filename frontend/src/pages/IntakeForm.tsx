@@ -10,37 +10,6 @@ const BUSINESS_TYPES = [
   "Non-Profit",
 ];
 
-const BUILDING_TYPES = [
-  "house",
-  "apartment_block",
-  "office",
-  "warehouse",
-  "industrial",
-  "unknown",
-];
-
-const ROOF_TYPES = ["flat", "gable", "hip", "shed", "mansard", "sawtooth", "unknown"];
-
-const WALL_MATERIALS = [
-  "brick",
-  "concrete",
-  "aac",
-  "timber_frame",
-  "steel_frame",
-  "sandwich_panel",
-  "glass_curtain",
-  "mixed",
-  "unknown",
-];
-
-const WINDOW_TYPES = [
-  "single_glazed",
-  "double_glazed",
-  "triple_glazed",
-  "mixed",
-  "unknown",
-];
-
 const STEPS = ["Business Info", "Building Details", "Review"];
 
 function StepIndicator({ current }: { current: number }) {
@@ -208,13 +177,7 @@ export default function IntakeForm() {
     annualEnergy: "",
     estimatedBudget: "$15,000 - $50,000",
     sustainabilityGoal: "",
-    buildingType: "unknown",
-    roofType: "unknown",
-    wallMaterial: "unknown",
-    windowType: "unknown",
     footprintArea: "",
-    floorsCount: "",
-    floorHeight: "",
   });
 
   const set =
@@ -291,7 +254,7 @@ export default function IntakeForm() {
                 {step === 0 &&
                   "Let's start with the basics. This information helps us identify the most relevant green subsidies for your sector."}
                 {step === 1 &&
-                  "Tell us about the building — the more you share, the more accurate our heat-loss and energy analysis will be."}
+                  "Upload a building photo for AI-powered analysis, and tell us the floor area for a tighter estimate."}
                 {step === 2 && "Review your information before we run the analysis."}
               </p>
               <StepIndicator current={step} />
@@ -436,13 +399,6 @@ export default function IntakeForm() {
 
               {step === 1 && (
                 <form className="space-y-8" onSubmit={(e) => e.preventDefault()}>
-                  <div className="flex items-center gap-3 mb-2">
-                    <span className="material-symbols-outlined text-primary text-xl">info</span>
-                    <p className="text-sm text-on-surface-variant">
-                      Upload a building photo for AI-powered visual analysis, or fill in the details manually — or both for the best results.
-                    </p>
-                  </div>
-
                   {/* Building Photo Upload */}
                   <div className="space-y-2">
                     <label className="block text-sm font-bold text-on-surface-variant ml-1">
@@ -463,7 +419,7 @@ export default function IntakeForm() {
                           Upload a photo of the building facade
                         </p>
                         <p className="text-xs text-on-surface-variant/60">
-                          The AI will analyze wall material, windows, roof, insulation signs, cracks & degradation
+                          The AI will identify wall material, windows, roof type, insulation signs, cracks & degradation
                         </p>
                       </label>
                     ) : (
@@ -496,154 +452,29 @@ export default function IntakeForm() {
                     )}
                   </div>
 
-                  <div className="relative flex items-center gap-4">
-                    <div className="flex-grow border-t border-surface-container-high" />
-                    <span className="text-xs font-bold text-on-surface-variant/50 uppercase tracking-widest">
-                      or specify manually
-                    </span>
-                    <div className="flex-grow border-t border-surface-container-high" />
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <label className="block text-sm font-bold text-on-surface-variant ml-1">
-                        Building Type
-                      </label>
-                      <div className="relative">
-                        <select
-                          className="w-full bg-surface-container-highest/40 border-none rounded-2xl px-5 py-4 focus:ring-2 focus:ring-primary appearance-none transition-all text-on-surface capitalize"
-                          value={form.buildingType}
-                          onChange={set("buildingType")}
-                        >
-                          {BUILDING_TYPES.map((t) => (
-                            <option key={t} value={t}>
-                              {t.replace(/_/g, " ")}
-                            </option>
-                          ))}
-                        </select>
-                        <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-outline">
-                          expand_more
-                        </span>
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <label className="block text-sm font-bold text-on-surface-variant ml-1">
-                        Roof Type
-                      </label>
-                      <div className="relative">
-                        <select
-                          className="w-full bg-surface-container-highest/40 border-none rounded-2xl px-5 py-4 focus:ring-2 focus:ring-primary appearance-none transition-all text-on-surface capitalize"
-                          value={form.roofType}
-                          onChange={set("roofType")}
-                        >
-                          {ROOF_TYPES.map((t) => (
-                            <option key={t} value={t}>
-                              {t.replace(/_/g, " ")}
-                            </option>
-                          ))}
-                        </select>
-                        <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-outline">
-                          expand_more
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <label className="block text-sm font-bold text-on-surface-variant ml-1">
-                        Wall Material
-                      </label>
-                      <div className="relative">
-                        <select
-                          className="w-full bg-surface-container-highest/40 border-none rounded-2xl px-5 py-4 focus:ring-2 focus:ring-primary appearance-none transition-all text-on-surface capitalize"
-                          value={form.wallMaterial}
-                          onChange={set("wallMaterial")}
-                        >
-                          {WALL_MATERIALS.map((t) => (
-                            <option key={t} value={t}>
-                              {t.replace(/_/g, " ")}
-                            </option>
-                          ))}
-                        </select>
-                        <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-outline">
-                          expand_more
-                        </span>
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <label className="block text-sm font-bold text-on-surface-variant ml-1">
-                        Window Type
-                      </label>
-                      <div className="relative">
-                        <select
-                          className="w-full bg-surface-container-highest/40 border-none rounded-2xl px-5 py-4 focus:ring-2 focus:ring-primary appearance-none transition-all text-on-surface capitalize"
-                          value={form.windowType}
-                          onChange={set("windowType")}
-                        >
-                          {WINDOW_TYPES.map((t) => (
-                            <option key={t} value={t}>
-                              {t.replace(/_/g, " ")}
-                            </option>
-                          ))}
-                        </select>
-                        <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-outline">
-                          expand_more
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="space-y-2">
-                      <label className="block text-sm font-bold text-on-surface-variant ml-1">
-                        Footprint Area
-                      </label>
-                      <div className="relative">
-                        <input
-                          className="w-full bg-surface-container-highest/40 border-none rounded-2xl px-5 py-4 focus:ring-2 focus:ring-primary transition-all text-on-surface placeholder:text-outline/50"
-                          placeholder="e.g. 3000"
-                          type="number"
-                          value={form.footprintArea}
-                          onChange={set("footprintArea")}
-                        />
-                        <span className="absolute right-5 top-1/2 -translate-y-1/2 text-sm font-bold text-emerald-700">
-                          m²
-                        </span>
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <label className="block text-sm font-bold text-on-surface-variant ml-1">
-                        Number of Floors
-                      </label>
+                  {/* Footprint Area */}
+                  <div className="space-y-2">
+                    <label className="block text-sm font-bold text-on-surface-variant ml-1">
+                      Ground Floor Area
+                    </label>
+                    <div className="relative">
+                      <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-primary">
+                        straighten
+                      </span>
                       <input
-                        className="w-full bg-surface-container-highest/40 border-none rounded-2xl px-5 py-4 focus:ring-2 focus:ring-primary transition-all text-on-surface placeholder:text-outline/50"
-                        placeholder="e.g. 1"
+                        className="w-full bg-surface-container-highest/40 border-none rounded-2xl pl-12 pr-16 py-4 focus:ring-2 focus:ring-primary transition-all text-on-surface placeholder:text-outline/50"
+                        placeholder="e.g. 800"
                         type="number"
-                        min="1"
-                        max="50"
-                        value={form.floorsCount}
-                        onChange={set("floorsCount")}
+                        value={form.footprintArea}
+                        onChange={set("footprintArea")}
                       />
+                      <span className="absolute right-5 top-1/2 -translate-y-1/2 text-sm font-bold text-emerald-700">
+                        m²
+                      </span>
                     </div>
-                    <div className="space-y-2">
-                      <label className="block text-sm font-bold text-on-surface-variant ml-1">
-                        Floor Height
-                      </label>
-                      <div className="relative">
-                        <input
-                          className="w-full bg-surface-container-highest/40 border-none rounded-2xl px-5 py-4 focus:ring-2 focus:ring-primary transition-all text-on-surface placeholder:text-outline/50"
-                          placeholder="e.g. 7.0"
-                          type="number"
-                          step="0.1"
-                          value={form.floorHeight}
-                          onChange={set("floorHeight")}
-                        />
-                        <span className="absolute right-5 top-1/2 -translate-y-1/2 text-sm font-bold text-emerald-700">
-                          m
-                        </span>
-                      </div>
-                    </div>
+                    <p className="text-xs text-on-surface-variant/60 ml-1">
+                      Optional — improves heat-loss accuracy. The AI estimates everything else from the photo.
+                    </p>
                   </div>
                 </form>
               )}
@@ -699,40 +530,15 @@ export default function IntakeForm() {
                   )}
 
                   {/* Building Details subsection */}
-                  {(form.buildingType !== "unknown" ||
-                    form.roofType !== "unknown" ||
-                    form.wallMaterial !== "unknown" ||
-                    form.windowType !== "unknown" ||
-                    form.footprintArea ||
-                    form.floorsCount ||
-                    form.floorHeight) && (
+                  {form.footprintArea && (
                     <>
                       <h4 className="text-sm font-bold text-primary uppercase tracking-wider pt-2">
                         Building Details
                       </h4>
-                      {(
-                        [
-                          ["Building Type", form.buildingType !== "unknown" ? form.buildingType.replace(/_/g, " ") : null],
-                          ["Roof Type", form.roofType !== "unknown" ? form.roofType.replace(/_/g, " ") : null],
-                          ["Wall Material", form.wallMaterial !== "unknown" ? form.wallMaterial.replace(/_/g, " ") : null],
-                          ["Window Type", form.windowType !== "unknown" ? form.windowType.replace(/_/g, " ") : null],
-                          ["Footprint Area", form.footprintArea ? `${form.footprintArea} m²` : null],
-                          ["Floors", form.floorsCount || null],
-                          ["Floor Height", form.floorHeight ? `${form.floorHeight} m` : null],
-                        ] as [string, string | null][]
-                      )
-                        .filter(([, v]) => v)
-                        .map(([label, value]) => (
-                          <div
-                            key={label}
-                            className="flex justify-between items-start py-3 border-b border-surface-container-high last:border-none"
-                          >
-                            <span className="text-sm font-bold text-on-surface-variant">{label}</span>
-                            <span className="text-sm text-on-surface text-right max-w-xs capitalize">
-                              {value}
-                            </span>
-                          </div>
-                        ))}
+                      <div className="flex justify-between items-start py-3 border-b border-surface-container-high last:border-none">
+                        <span className="text-sm font-bold text-on-surface-variant">Ground Floor Area</span>
+                        <span className="text-sm text-on-surface text-right">{form.footprintArea} m²</span>
+                      </div>
                     </>
                   )}
                 </div>

@@ -7,14 +7,13 @@ export interface IntakeFormData {
   annualEnergy: string;
   estimatedBudget: string;
   sustainabilityGoal: string;
-  // Building details (optional, Step 2)
-  buildingType: string;
-  roofType: string;
-  wallMaterial: string;
-  windowType: string;
   footprintArea: string;
-  floorsCount: string;
-  floorHeight: string;
+}
+
+export interface AgentInsight {
+  icon: string;
+  title: string;
+  description: string;
 }
 
 export interface AgentMetrics {
@@ -29,6 +28,7 @@ export interface AgentMetrics {
   recommended_project: string | null;
   geometry_confidence: number | null;
   site_stability_score: number | null;
+  insights: AgentInsight[] | null;
 }
 
 export interface AnalysisResult {
