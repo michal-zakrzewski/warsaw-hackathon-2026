@@ -140,21 +140,36 @@ uv run earthengine authenticate
 
 ### 4. Start all services
 
+**Option A — Docker (recommended)**
+
+```bash
+# Set the SA key path to the container path
+sed -i '' 's|GOOGLE_APPLICATION_CREDENTIALS=.*|GOOGLE_APPLICATION_CREDENTIALS=/app/service-account.json|' .env
+
+docker compose up --build
+```
+
+Open **http://localhost:3000** and click **Start**.
+
+**Option B — Local (4 terminals)**
+
 ```bash
 # Terminal 1 — ADK Agent (port 8000)
 uv run adk api_server . --port 8000
 
 # Terminal 2 — Voice Server (port 8001)
-uvicorn voice_server:app --port 8001
+uv run uvicorn voice_server:app --port 8001 --reload
 
 # Terminal 3 — Bill Intelligence (port 8002)
-cd bill_intelligence && uvicorn main:app --port 8002
+uv run uvicorn bill_intelligence.main:app --port 8002 --reload
 
 # Terminal 4 — Frontend (port 5173)
 cd frontend && npm run dev
 ```
 
 Open **http://localhost:5173** and click **Start**.
+
+> **Note:** Always use `uv run uvicorn ...` (not bare `uvicorn`) — the project requires Python 3.12 and `uv` ensures the correct interpreter is used.
 
 ---
 

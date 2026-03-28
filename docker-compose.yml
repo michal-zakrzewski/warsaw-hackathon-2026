@@ -1,0 +1,42 @@
+services:
+  agent:
+    build:
+      context: .
+      dockerfile: Dockerfile.agent
+    env_file: .env
+    volumes:
+      - ./service-account.json:/app/service-account.json:ro
+    ports:
+      - "8000:8000"
+
+  voice:
+    build:
+      context: .
+      dockerfile: Dockerfile.voice
+    env_file: .env
+    volumes:
+      - ./service-account.json:/app/service-account.json:ro
+      - ./transcripts:/app/transcripts
+    ports:
+      - "8001:8001"
+
+  bills:
+    build:
+      context: .
+      dockerfile: Dockerfile.bills
+    env_file: .env
+    volumes:
+      - ./service-account.json:/app/service-account.json:ro
+    ports:
+      - "8002:8002"
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - agent
+      - voice
+      - bills
