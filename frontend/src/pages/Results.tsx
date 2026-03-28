@@ -258,7 +258,7 @@ export default function Results() {
       columnStyles: { 0: { fontStyle: "bold", cellWidth: 45 }, 1: { cellWidth: 45 } },
     });
 
-    y = (doc as unknown as Record<string, number>).lastAutoTable?.finalY ?? y + 50;
+    y = (doc as unknown as { lastAutoTable?: { finalY?: number } }).lastAutoTable?.finalY ?? y + 50;
     y += 10;
 
     doc.setFontSize(13);
@@ -281,7 +281,7 @@ export default function Results() {
       margin: { left: margin, right: margin },
     });
 
-    y = (doc as unknown as Record<string, number>).lastAutoTable?.finalY ?? y + 30;
+    y = (doc as unknown as { lastAutoTable?: { finalY?: number } }).lastAutoTable?.finalY ?? y + 30;
     y += 10;
 
     const insights = m?.insights && m.insights.length > 0 ? m.insights : FALLBACK_INSIGHTS;
