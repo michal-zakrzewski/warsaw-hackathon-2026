@@ -1,0 +1,20 @@
+[project]
+name = "satellite-embedding"
+version = "0.1.0"
+description = "MVP connector for Google Satellite Embedding (AlphaEarth Foundations) via Earth Engine"
+readme = "README.md"
+authors = [
+    { name = "pabloknappo", email = "pabliken@gmail.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "earthengine-api>=1.7.19",
+    "google-adk>=1.28.0",
+]
+
+[project.scripts]
+satellite-embedding-demo = "satellite_embedding.demo:main"
+
+[build-system]
+requires = ["uv_build>=0.11.2,<0.12.0"]
+build-backend = "uv_build"

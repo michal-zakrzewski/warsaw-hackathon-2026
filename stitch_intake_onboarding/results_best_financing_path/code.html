@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>GreenQualify Results Dashboard</title>
+<!-- Google Fonts: Manrope -->
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200;300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "error": "#ba1a1a",
+              "surface-dim": "#d8dadc",
+              "on-tertiary-fixed-variant": "#004c6e",
+              "background": "#f7f9fb",
+              "primary-fixed-dim": "#68dba9",
+              "surface": "#f7f9fb",
+              "surface-container-low": "#f2f4f6",
+              "tertiary-container": "#007cb1",
+              "on-background": "#191c1e",
+              "on-surface-variant": "#3d4a42",
+              "on-tertiary-container": "#fcfcff",
+              "on-primary-container": "#f5fff7",
+              "on-secondary-fixed-variant": "#3c475a",
+              "on-error-container": "#93000a",
+              "inverse-primary": "#68dba9",
+              "tertiary-fixed": "#c9e6ff",
+              "on-primary": "#ffffff",
+              "inverse-on-surface": "#eff1f3",
+              "surface-container-lowest": "#ffffff",
+              "outline": "#6d7a72",
+              "on-secondary-fixed": "#111c2d",
+              "secondary-fixed-dim": "#bcc7de",
+              "surface-variant": "#e0e3e5",
+              "surface-container-high": "#e6e8ea",
+              "inverse-surface": "#2d3133",
+              "on-primary-fixed": "#002114",
+              "on-tertiary-fixed": "#001e2f",
+              "on-primary-fixed-variant": "#005137",
+              "on-secondary-container": "#586377",
+              "tertiary": "#00628d",
+              "secondary-fixed": "#d8e3fb",
+              "primary-container": "#00855d",
+              "on-surface": "#191c1e",
+              "primary": "#006948",
+              "on-error": "#ffffff",
+              "tertiary-fixed-dim": "#89ceff",
+              "surface-container": "#eceef0",
+              "error-container": "#ffdad6",
+              "surface-bright": "#f7f9fb",
+              "primary-fixed": "#85f8c4",
+              "secondary": "#545f73",
+              "surface-container-highest": "#e0e3e5",
+              "on-tertiary": "#ffffff",
+              "secondary-container": "#d5e0f8",
+              "surface-tint": "#006c4a",
+              "on-secondary": "#ffffff",
+              "outline-variant": "#bccac0"
+            },
+            fontFamily: {
+              "headline": ["Manrope"],
+              "body": ["Manrope"],
+              "label": ["Manrope"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+      .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      }
+      .fill-icon {
+        font-variation-settings: 'FILL' 1;
+      }
+      .bg-gradient-primary {
+        background: linear-gradient(135deg, #006948 0%, #00855d 100%);
+      }
+    </style>
+</head>
+<body class="bg-surface font-body text-on-surface antialiased">
+<!-- TopNavBar (Shared Component) -->
+<header class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md shadow-sm dark:shadow-none fixed top-0 w-full z-50">
+<div class="flex justify-between items-center px-8 py-4 max-w-7xl mx-auto">
+<div class="text-2xl font-bold tracking-tighter text-emerald-900 dark:text-emerald-50">Concierge</div>
+<nav class="hidden md:flex items-center gap-8 font-manrope text-sm font-medium tracking-tight">
+<a class="text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-300 transition-colors" href="#">How it Works</a>
+<a class="text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-300 transition-colors" href="#">Case Study</a>
+</nav>
+<div class="flex items-center gap-4 font-manrope text-sm font-medium">
+<button class="text-emerald-700 dark:text-emerald-400 hover:text-emerald-600 transition-colors">Sign In</button>
+<button class="bg-gradient-primary text-on-primary px-6 py-2 rounded-full active:scale-95 duration-150 transition-transform">Start</button>
+</div>
+</div>
+<div class="bg-slate-200/20 dark:bg-slate-800/20 h-[1px] w-full"></div>
+</header>
+<main class="pt-24 pb-20 px-4 md:px-12 max-w-7xl mx-auto">
+<!-- Dashboard Header / Summary Area -->
+<div class="mb-12">
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
+<div>
+<span class="inline-flex items-center gap-2 px-3 py-1 bg-primary/10 text-primary rounded-full text-sm font-semibold mb-4">
+<span class="material-symbols-outlined text-sm fill-icon">verified</span>
+                        High Qualification Likelihood
+                    </span>
+<h1 class="text-4xl md:text-5xl font-extrabold tracking-tight text-on-surface mb-2">Solar + Storage</h1>
+<p class="text-lg text-on-surface-variant font-medium">Recommended Financing: <span class="text-tertiary">GreenBridge Capital</span></p>
+</div>
+<div class="flex gap-3">
+<button class="flex items-center gap-2 px-5 py-2.5 bg-surface-container-lowest text-on-surface border border-outline-variant/20 rounded-xl hover:bg-surface-container-low transition-colors shadow-sm">
+<span class="material-symbols-outlined">share</span>
+<span class="text-sm font-semibold">Share</span>
+</button>
+<button class="flex items-center gap-2 px-5 py-2.5 bg-gradient-primary text-on-primary rounded-xl hover:opacity-90 transition-opacity shadow-lg">
+<span class="material-symbols-outlined">download</span>
+<span class="text-sm font-semibold">Export PDF</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Key Stats Grid -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+<!-- Stat Card 1 -->
+<div class="bg-surface-container-lowest p-8 rounded-xl shadow-sm border border-outline-variant/10">
+<div class="flex items-center justify-between mb-4">
+<p class="text-on-surface-variant text-sm font-bold uppercase tracking-widest">Estimated Payback</p>
+<span class="material-symbols-outlined text-primary">calendar_today</span>
+</div>
+<div class="flex items-baseline gap-1">
+<span class="text-4xl font-extrabold tracking-tighter">4.2</span>
+<span class="text-on-surface-variant font-semibold">years</span>
+</div>
+<div class="mt-4 h-1.5 w-full bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-primary w-[85%] rounded-full"></div>
+</div>
+</div>
+<!-- Stat Card 2 -->
+<div class="bg-surface-container-lowest p-8 rounded-xl shadow-sm border border-outline-variant/10">
+<div class="flex items-center justify-between mb-4">
+<p class="text-on-surface-variant text-sm font-bold uppercase tracking-widest">Annual Savings</p>
+<span class="material-symbols-outlined text-primary">payments</span>
+</div>
+<div class="flex items-baseline gap-1">
+<span class="text-4xl font-extrabold tracking-tighter">$12,450</span>
+<span class="text-on-surface-variant font-semibold">/yr</span>
+</div>
+<p class="text-primary text-sm font-bold mt-4">+18% vs baseline</p>
+</div>
+<!-- Stat Card 3 -->
+<div class="bg-surface-container-lowest p-8 rounded-xl shadow-sm border border-outline-variant/10">
+<div class="flex items-center justify-between mb-4">
+<p class="text-on-surface-variant text-sm font-bold uppercase tracking-widest">CO2 Reduction</p>
+<span class="material-symbols-outlined text-primary">eco</span>
+</div>
+<div class="flex items-baseline gap-1">
+<span class="text-4xl font-extrabold tracking-tighter">18.5</span>
+<span class="text-on-surface-variant font-semibold">tons</span>
+</div>
+<p class="text-on-surface-variant text-xs mt-4">Equivalent to 425 trees planted</p>
+</div>
+</div>
+<!-- Bento Grid for Analysis & Requirements -->
+<div class="grid grid-cols-1 lg:grid-cols-5 gap-8 mb-12">
+<!-- Best Option Insights (3 cols) -->
+<div class="lg:col-span-3 bg-surface-container-low p-8 rounded-xl flex flex-col justify-between">
+<div>
+<h2 class="text-2xl font-bold tracking-tight mb-8">Why this is the best option</h2>
+<div class="space-y-6">
+<div class="flex gap-5 group">
+<div class="w-12 h-12 shrink-0 rounded-full bg-primary/10 flex items-center justify-center text-primary transition-transform group-hover:scale-110">
+<span class="material-symbols-outlined">bolt</span>
+</div>
+<div>
+<h3 class="font-bold text-lg mb-1">Peak-Shaving Efficiency</h3>
+<p class="text-on-surface-variant leading-relaxed">The storage integration allows you to avoid peak utility rates, cutting operational costs by 35% during high-demand hours.</p>
+</div>
+</div>
+<div class="flex gap-5 group">
+<div class="w-12 h-12 shrink-0 rounded-full bg-primary/10 flex items-center justify-center text-primary transition-transform group-hover:scale-110">
+<span class="material-symbols-outlined">shield_moon</span>
+</div>
+<div>
+<h3 class="font-bold text-lg mb-1">Energy Resilience</h3>
+<p class="text-on-surface-variant leading-relaxed">Maintain critical operations during grid failures. Your facility stays online without expensive diesel generator fuel costs.</p>
+</div>
+</div>
+<div class="flex gap-5 group">
+<div class="w-12 h-12 shrink-0 rounded-full bg-primary/10 flex items-center justify-center text-primary transition-transform group-hover:scale-110">
+<span class="material-symbols-outlined">trending_up</span>
+</div>
+<div>
+<h3 class="font-bold text-lg mb-1">Maximized ITC Benefits</h3>
+<p class="text-on-surface-variant leading-relaxed">Current legislation favors this combined stack, unlocking a 30% Investment Tax Credit for the entire project cost.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Next Steps Checklist (2 cols) -->
+<div class="lg:col-span-2 bg-tertiary text-on-tertiary p-8 rounded-xl relative overflow-hidden">
+<div class="relative z-10">
+<h2 class="text-2xl font-bold tracking-tight mb-2">What you need next</h2>
+<p class="text-tertiary-fixed/70 text-sm mb-8">Required for final GreenBridge approval</p>
+<ul class="space-y-4">
+<li class="flex items-center gap-4 p-4 bg-white/10 rounded-xl backdrop-blur-sm border border-white/10">
+<span class="material-symbols-outlined text-tertiary-fixed">check_box_outline_blank</span>
+<span class="font-medium">Signed Tax ID Verification</span>
+</li>
+<li class="flex items-center gap-4 p-4 bg-white/10 rounded-xl backdrop-blur-sm border border-white/10">
+<span class="material-symbols-outlined text-tertiary-fixed">check_box_outline_blank</span>
+<span class="font-medium">Property Deed / Title</span>
+</li>
+<li class="flex items-center gap-4 p-4 bg-white/10 rounded-xl backdrop-blur-sm border border-white/10">
+<span class="material-symbols-outlined text-tertiary-fixed">check_box_outline_blank</span>
+<span class="font-medium">Last 6 Months Utility Bills</span>
+</li>
+<li class="flex items-center gap-4 p-4 bg-white/10 rounded-xl backdrop-blur-sm border border-white/10">
+<span class="material-symbols-outlined text-tertiary-fixed">check_box_outline_blank</span>
+<span class="font-medium">Facility Layout Blueprints</span>
+</li>
+</ul>
+<button class="mt-8 w-full py-4 bg-surface-container-lowest text-tertiary rounded-xl font-bold hover:bg-tertiary-fixed transition-colors">
+                        Upload Documents
+                    </button>
+</div>
+<!-- Abstract Design Decor -->
+<div class="absolute -bottom-12 -right-12 w-48 h-48 bg-white/5 rounded-full blur-3xl"></div>
+</div>
+</div>
+<!-- Comparison Table Section -->
+<div class="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/10 overflow-hidden">
+<div class="px-8 py-6 border-b border-surface-container-high">
+<h2 class="text-xl font-bold tracking-tight">Project Comparison</h2>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left">
+<thead>
+<tr class="bg-surface-container-low text-on-surface-variant">
+<th class="px-8 py-4 text-xs font-bold uppercase tracking-widest">Type</th>
+<th class="px-8 py-4 text-xs font-bold uppercase tracking-widest">Upfront Cost</th>
+<th class="px-8 py-4 text-xs font-bold uppercase tracking-widest">Qual. Likelihood</th>
+<th class="px-8 py-4 text-xs font-bold uppercase tracking-widest">Net Outcome</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-surface-container-high">
+<tr class="hover:bg-primary/5 transition-colors">
+<td class="px-8 py-6">
+<div class="flex items-center gap-3">
+<div class="w-2 h-2 rounded-full bg-primary"></div>
+<span class="font-bold">Solar Only</span>
+</div>
+</td>
+<td class="px-8 py-6 font-medium text-on-surface-variant">$245,000</td>
+<td class="px-8 py-6">
+<span class="px-3 py-1 bg-surface-container text-on-surface-variant rounded-full text-xs font-bold">Medium</span>
+</td>
+<td class="px-8 py-6 font-bold text-primary">+$8.2k/yr</td>
+</tr>
+<tr class="bg-primary/5">
+<td class="px-8 py-6">
+<div class="flex items-center gap-3">
+<div class="w-2 h-2 rounded-full bg-emerald-600 animate-pulse"></div>
+<span class="font-bold">Solar + Storage</span>
+</div>
+</td>
+<td class="px-8 py-6 font-medium text-on-surface-variant">$380,000</td>
+<td class="px-8 py-6">
+<span class="px-3 py-1 bg-primary text-on-primary rounded-full text-xs font-bold">High (Best)</span>
+</td>
+<td class="px-8 py-6 font-bold text-primary">+$12.4k/yr</td>
+</tr>
+<tr class="hover:bg-primary/5 transition-colors">
+<td class="px-8 py-6">
+<div class="flex items-center gap-3">
+<div class="w-2 h-2 rounded-full bg-tertiary"></div>
+<span class="font-bold">Efficiency Retrofit</span>
+</div>
+</td>
+<td class="px-8 py-6 font-medium text-on-surface-variant">$115,000</td>
+<td class="px-8 py-6">
+<span class="px-3 py-1 bg-surface-container text-on-surface-variant rounded-full text-xs font-bold">Medium</span>
+</td>
+<td class="px-8 py-6 font-bold text-primary">+$4.1k/yr</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</main>
+<!-- Footer (Shared Component) -->
+<footer class="bg-slate-50 dark:bg-slate-950 w-full py-12 border-t border-slate-200 dark:border-slate-800">
+<div class="flex flex-col md:flex-row justify-between items-center px-8 max-w-7xl mx-auto gap-6">
+<p class="font-manrope text-xs text-slate-500 uppercase tracking-widest">© 2024 Concierge Finance. Secure &amp; Encrypted.</p>
+<nav class="flex gap-8">
+<a class="font-manrope text-xs text-slate-500 uppercase tracking-widest hover:text-emerald-600 transition-colors" href="#">Privacy</a>
+<a class="font-manrope text-xs text-slate-500 uppercase tracking-widest hover:text-emerald-600 transition-colors" href="#">Security</a>
+<a class="font-manrope text-xs text-slate-500 uppercase tracking-widest hover:text-emerald-600 transition-colors" href="#">Contact</a>
+</nav>
+</div>
+</footer>
+</body></html>
