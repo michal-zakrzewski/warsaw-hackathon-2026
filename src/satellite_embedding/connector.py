@@ -42,6 +42,24 @@ def sample_point(lon: float, lat: float, year: int) -> dict[str, float]:
     return {k: float(v) for k, v in props.items() if k in BANDS}
 
 
+def compare_years(
+    lon: float,
+    lat: float,
+    year_a: int,
+    year_b: int,
+) -> dict[str, float]:
+    """Dot-product similarity between embeddings at the same point in two years.
+
+    Returns a value between -1 and 1 (unit-length vectors). A score near 1.0
+    means the land-use context is stable; lower values indicate change.
+    """
+    vec_a = sample_point(lon, lat, year_a)
+    vec_b = sample_point(lon, lat, year_b)
+    shared = sorted(set(vec_a) & set(vec_b))
+    dot = sum(vec_a[k] * vec_b[k] for k in shared)
+    return {"similarity": dot, "year_a": year_a, "year_b": year_b}
+
+
 def mean_embedding_in_bbox(
     lon_min: float,
     lat_min: float,
