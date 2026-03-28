@@ -65,6 +65,23 @@ export default function AnalysisLoading() {
         : []),
       ``,
       `Provide: recommended financing path, estimated payback period, annual savings, CO2 reduction, and comparison of at least 3 project types.`,
+      ``,
+      `IMPORTANT: At the very END of your response, include a fenced JSON block with key metrics extracted from your analysis. Use null for any value you cannot determine:`,
+      "```json",
+      `{`,
+      `  "heat_loss_kw": <base heat loss in kW or null>,`,
+      `  "heat_loss_range": "<low–high kW range as string or null>",`,
+      `  "dominant_loss_source": "<walls|roof|windows|infiltration or null>",`,
+      `  "solar_panels": <panel count or null>,`,
+      `  "solar_output_kwh": <annual kWh or null>,`,
+      `  "co2_reduction_tons": <annual tons or null>,`,
+      `  "estimated_payback_years": <best project payback in years or null>,`,
+      `  "annual_savings_usd": <best project annual savings USD or null>,`,
+      `  "recommended_project": "<short project title or null>",`,
+      `  "geometry_confidence": <0-1 or null>,`,
+      `  "site_stability_score": <satellite similarity score 0-1 or null>`,
+      `}`,
+      "```",
     ]
       .filter(Boolean)
       .join("\n");

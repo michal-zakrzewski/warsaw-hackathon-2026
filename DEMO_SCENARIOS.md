@@ -26,9 +26,11 @@ Open http://localhost:5173/ and click **Start**.
 
 ## Scenario 1: US Farm — Solar + Satellite Stability
 
-**What it demonstrates:** Full-stack analysis combining Google Solar API (real rooftop data) with AlphaEarth satellite embeddings (land-use stability). The agent tailors advice to agriculture, including organic certification eligibility.
+**What it demonstrates:** Full-stack analysis combining Google Solar API (real rooftop data) with AlphaEarth satellite embeddings (land-use stability). No building photo, no building details — Step 2 is skipped entirely. The agent tailors advice to agriculture, including organic certification eligibility.
 
 ### Form inputs
+
+**Step 1 — Business Info:**
 
 | Field | Value |
 |---|---|
@@ -41,12 +43,15 @@ Open http://localhost:5173/ and click **Start**.
 | Budget | ~$30k |
 | Sustainability Goal | `Install solar panels on barn roof and assess land stability for organic certification` |
 
+**Step 2 — Building Details:** Skip (leave all fields on "unknown", no photo).
+
 ### What to expect
 
 - **Satellite embedding:** Stability score ~0.956 (2017–2023) — very stable land-use context
 - **Solar API:** 156 panels, 306 m² roof, ~12,098 kWh/yr output, $7,807 federal incentive
 - **Agent insight:** Notes that solar covers only ~14% of demand, install cost ($187k) exceeds budget, recommends phased approach and USDA REAP grants
-- **Organic certification:** Agent connects the high stability score to eligibility for organic certification — a creative, domain-relevant recommendation
+- **Organic certification:** Agent connects the high stability score to eligibility for organic certification
+- **Dynamic stat cards:** Solar potential, CO₂ reduction, and site stability will populate. Heat Loss card will show "—" (no building analysis requested).
 
 ### Key talking points
 
@@ -54,12 +59,13 @@ Open http://localhost:5173/ and click **Start**.
 - Real rooftop solar analysis from Google Solar API
 - Agent doesn't blindly recommend — flags budget mismatch and suggests alternatives
 - Context-aware: references USDA agricultural programs, not generic advice
+- Sets the baseline: "the system is useful with just an address and coordinates"
 
 ---
 
-## Scenario 2: Warsaw Factory — Heat Loss + Solar + Satellite
+## Scenario 2: Warsaw Office/Industrial — Photo-Driven Heat Loss + Solar + Satellite
 
-**What it demonstrates:** Different geography (EU), different business type (manufacturing), and the agent adapts by using the heat-loss estimation tool with **user-provided building details**. Solar API has limited data for Poland, so the agent pivots to energy efficiency as the primary recommendation. The building details (Step 2 of the form) enable a physics-based heat-loss calculation instead of generic defaults.
+**What it demonstrates:** Different geography (EU), different business type (manufacturing), and the **killer feature** — a building photo is uploaded, and Gemini visually analyzes it to identify wall materials, windows, roof type, cracks, degradation, and insulation signs. The visual observations feed directly into a physics-based heat-loss calculation (EN ISO 6946 / EN 12831). All three tool categories fire in one analysis.
 
 ### Form inputs
 
@@ -67,55 +73,78 @@ Open http://localhost:5173/ and click **Start**.
 
 | Field | Value |
 |---|---|
-| Business Name | `EcoSteel Warsaw` |
+| Business Name | `EcoSteel Annopol` |
 | Business Type | `Manufacturing` |
-| Address | `Prosta 20, Warsaw, Poland` |
-| Latitude | `52.2297` |
-| Longitude | `21.0122` |
+| Address | `ul. Annopol 4, Warsaw, Poland` |
+| Latitude | `52.3012` |
+| Longitude | `21.0220` |
 | Annual Energy | `200000` |
 | Budget | ~$80k |
-| Sustainability Goal | `Reduce heating costs and carbon footprint for our manufacturing facility through energy efficiency upgrades` |
+| Sustainability Goal | `Reduce heating costs and carbon footprint through energy efficiency upgrades` |
 
 **Step 2 — Building Details:**
 
 | Field | Value |
 |---|---|
-| Building Type | `industrial` |
+| Building Photo | Upload `demo/demo_factory.png` |
+| Building Type | `office` |
 | Roof Type | `flat` |
-| Wall Material | `sandwich_panel` |
-| Window Type | `double_glazed` |
-| Footprint Area | `3000` |
-| Floors | `1` |
-| Floor Height | `7.0` |
+| Floors | `3` |
+| Footprint Area | `800` |
+| Floor Height | `3.2` |
+| Wall Material | Leave on `unknown` (let the AI identify from photo) |
+| Window Type | Leave on `unknown` (let the AI identify from photo) |
 
 ### What to expect
 
-- **Satellite embedding:** Stability score ~0.96 (2017–2022) — stable urban/commercial area
-- **Solar API:** Large roof potential (2,640 m², 1,345 panels), ~129,000 kWh/yr from budget-sized system
-- **Heat-loss estimation:** With user-provided building details (sandwich panel walls, flat roof, 3000 m² footprint, 7 m floor height), the estimate is much tighter than defaults — sandwich panels have low U-values (0.15–0.50 W/m²K), shifting the dominant loss to infiltration and roof. Expect total heat loss of ~200–400 kW depending on conditions.
-- **3-project comparison table** generated by the agent:
-  - Building envelope upgrades: **3–4 year payback**, significant savings
-  - Rooftop solar: **8–10 year payback**, ~$19,350/yr savings
-  - HVAC modernization: **5–10 year payback**, ~$25–40k/yr savings
-- **Agent insight:** With sandwich panel walls, the agent should recognize walls are already well-insulated and focus recommendations on roof insulation, air sealing, and HVAC — not wall upgrades
+- **Vision analysis:** Gemini examines the photo and identifies:
+  - Glass curtain wall facade with red accent panels
+  - Steel frame structure
+  - Flat roof (covering not visible)
+  - Double-glazed windows (modern aluminum frames)
+  - No visible cracks, no degradation, no external insulation
+  - Vision confidence ~0.8
+- **Heat-loss estimation:** Base heat loss **~101.7 kW** (range: 42.1–229.8 kW)
+  - Windows: ~34 kW (dominant — because glass curtain wall)
+  - Infiltration: ~31 kW
+  - Walls: ~25 kW
+  - Roof: ~12 kW
+  - Geometry confidence: 100% (because dimensions were provided)
+- **Satellite embedding:** Stability score ~0.95 (2017–2023) — very stable
+- **Solar API:** 111 panels, 218 m², ~45,770 kWh/yr (~45.8 MWh/yr), ~34.5 tons CO₂/yr offset
+- **Dynamic stat cards:** All four populated — Heat Loss 101.7 kW, Solar 45.8 MWh/yr, CO₂ 57.2 tons/yr, Site Stability 0.95
+- **Building Energy Profile:** Shows dominant loss source (windows), geometry confidence, payback (~6.6 yr), annual savings (~$15,255)
+- **Agent recommendation:** "Heat Loss Reduction (Infiltration & Windows)" — prioritizes envelope upgrades over solar due to faster payback (6.6 yr vs 8.2 yr)
 
 ### Key talking points
 
+- **Photo-to-analysis pipeline:** Upload a photo → AI identifies materials → physics-based heat-loss estimate. That's the "wow" moment.
 - Agent used **three different tool categories** (satellite, solar, heat-loss) in one analysis
-- **Building details from Step 2** flow directly into the heat-loss tool — the form fields map 1:1 to `estimate_heat_loss` parameters
-- Agent correctly adapts: sandwich panel walls are low-loss, so it pivots to other loss components
-- Recommended EU-relevant financing (EPCs, PPAs, green loans) — not US programs
-- Demonstrates adaptability: same system, completely different advice for different contexts
+- Gemini correctly identified **glass curtain wall** as the dominant heat-loss surface from the photo
+- Provided dimensions gave **100% geometry confidence** vs 37% without them
+- Agent recommended **envelope upgrades over solar** — data-driven, not generic advice
+- Recommended EU-relevant financing (green loans, sustainability-linked financing) — not US programs
+- Same system, completely different advice for different contexts
 
 ---
 
 ## Side-by-side comparison
 
-| | Mountain View Farm | Warsaw Factory |
+| | Mountain View Farm | Warsaw Office/Industrial |
 |---|---|---|
-| Tools used | Satellite + Solar | Satellite + Solar + Heat-loss |
-| Primary recommendation | Phased solar + organic cert | Building envelope first |
-| Fastest payback | N/A (over budget) | 3.2 years (envelope) |
-| CO₂ reduction | ~5 tons/yr | ~97 tons (solar) + ~79 tons (envelope) |
-| Financing referenced | USDA REAP grants | EPCs, PPAs, green loans |
+| Photo uploaded | No | Yes (`demo/demo_factory.png`) |
+| Tools used | Satellite + Solar | Satellite + Solar + Heat-loss + Vision |
+| Dynamic stat cards | Solar + CO₂ + Stability | All 4 (Heat Loss + Solar + CO₂ + Stability) |
+| Primary recommendation | Phased solar + organic cert | Envelope upgrades (infiltration + windows) |
+| Fastest payback | N/A (over budget) | 6.6 years |
+| Annual savings | — | ~$15,255 |
+| CO₂ reduction | ~5 tons/yr | ~57 tons/yr (envelope) + ~35 tons/yr (solar) |
+| Financing referenced | USDA REAP grants | Green loans, sustainability-linked financing |
 | Region-specific | California net metering | Polish energy rates |
+
+---
+
+## Presentation story arc
+
+1. **Scenario 1** — "Here's a farm in California. We fill in an address and coordinates. The system pulls real satellite data and real solar rooftop data. It gives smart, region-specific advice." *(Baseline — shows the system is useful)*
+2. **Scenario 2** — "Now let's go harder. A factory in Warsaw. This time we upload a photo of the building. Watch what happens — the AI examines the facade, identifies glass curtain walls, and runs a physics-based heat-loss calculation. It combines that with satellite stability data and solar potential for a complete green-finance assessment from a single photo." *(Wow moment — multimodal AI + physics engine)*
