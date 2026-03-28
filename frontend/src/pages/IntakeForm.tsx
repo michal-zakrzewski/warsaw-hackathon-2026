@@ -12,7 +12,7 @@ const BUSINESS_TYPES = [
   "Non-Profit",
 ];
 
-const STEPS = ["Business Info", "Supporting Info", "Review"];
+const STEPS = ["Business Info", "Building Details", "Review"];
 
 function StepIndicator({ current }: { current: number }) {
   return (
@@ -32,7 +32,7 @@ function StepIndicator({ current }: { current: number }) {
 function Sidebar({ current }: { current: number }) {
   const items = [
     { icon: "business_center", label: "Business Info" },
-    { icon: "upload_file", label: "Add Supporting Info" },
+    { icon: "apartment", label: "Building Details" },
     { icon: "fact_check", label: "Review" },
   ];
   return (
@@ -84,6 +84,7 @@ export default function IntakeForm() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [voiceContext, setVoiceContext] = useState<string | null>(null);
   const [voiceFilled, setVoiceFilled] = useState(false);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [form, setForm] = useState<IntakeFormData>({
     businessName: "",
     businessType: BUSINESS_TYPES[0],
@@ -93,6 +94,7 @@ export default function IntakeForm() {
     annualEnergy: "",
     estimatedBudget: "$15,000 - $50,000",
     sustainabilityGoal: "",
+    footprintArea: "",
   });
 
   const handleVoiceExtracted = useCallback((data: VoiceExtractedData) => {
@@ -138,12 +140,33 @@ export default function IntakeForm() {
     if (e.dataTransfer.files) setBillFiles(Array.from(e.dataTransfer.files));
   };
 
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = reader.result as string;
+      setImagePreview(dataUrl);
+      const base64 = dataUrl.split(",")[1];
+      const mimeType = file.type || "image/jpeg";
+      sessionStorage.setItem(
+        "buildingImage",
+        JSON.stringify({ base64, mimeType })
+      );
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const removeImage = () => {
+    setImagePreview(null);
+    sessionStorage.removeItem("buildingImage");
+  };
+
   const next = async () => {
     if (step < 2) {
       setStep(step + 1);
       return;
     }
-    // Step 3 → Run Analysis
     setBillsProcessing(true);
     setBillsError(null);
     try {
@@ -151,7 +174,6 @@ export default function IntakeForm() {
       if (billFiles.length > 0) {
         const buildingId = form.businessName.replace(/\s+/g, "-").toLowerCase() || "building";
         billResult = await processBills(buildingId, billFiles);
-        // Prefill annualEnergy from bills if user left it blank
         const kwh = billResult.derived_inputs.annual_electricity_kwh;
         if (kwh && !form.annualEnergy) {
           setForm((prev) => ({ ...prev, annualEnergy: String(Math.round(kwh)) }));
@@ -205,7 +227,7 @@ export default function IntakeForm() {
                 {step === 0 &&
                   "Let's start with the basics. This information helps us identify the most relevant green subsidies for your sector."}
                 {step === 1 &&
-                  "Add any supporting documents or additional details to strengthen your application."}
+                  "Upload a building photo for AI-powered analysis, and tell us the floor area for a tighter estimate."}
                 {step === 2 && "Review your information before we run the analysis."}
               </p>
               <StepIndicator current={step} />
@@ -349,53 +371,132 @@ export default function IntakeForm() {
               )}
 
               {step === 1 && (
-                <div className="space-y-6">
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    multiple
-                    accept=".pdf,image/png,image/jpeg,image/tiff,image/gif,image/webp"
-                    className="hidden"
-                    onChange={handleFileChange}
-                  />
-                  <div
-                    className="border-2 border-dashed border-outline-variant/30 rounded-2xl p-12 text-center cursor-pointer hover:border-primary/40 hover:bg-emerald-50/30 transition-all"
-                    onClick={() => fileInputRef.current?.click()}
-                    onDrop={handleDrop}
-                    onDragOver={(e) => e.preventDefault()}
-                  >
-                    <span className="material-symbols-outlined text-5xl text-on-surface-variant/40 mb-4 block">
-                      upload_file
-                    </span>
-                    <p className="text-on-surface-variant font-medium mb-2">
-                      Drag & drop utility bills here, or click to browse
-                    </p>
-                    <p className="text-sm text-on-surface-variant/60">
-                      PDF or images (PNG, JPG) — multiple bills welcome
+                <div className="space-y-8">
+                  {/* Building Photo Upload */}
+                  <div className="space-y-2">
+                    <label className="block text-sm font-bold text-on-surface-variant ml-1">
+                      Building Photograph
+                    </label>
+                    {!imagePreview ? (
+                      <label className="border-2 border-dashed border-primary/30 rounded-2xl p-8 text-center cursor-pointer hover:border-primary/60 hover:bg-emerald-50/30 transition-all block group">
+                        <input
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp"
+                          className="hidden"
+                          onChange={handleImageUpload}
+                        />
+                        <span className="material-symbols-outlined text-4xl text-primary/40 group-hover:text-primary/70 mb-3 block transition-colors">
+                          add_a_photo
+                        </span>
+                        <p className="text-on-surface-variant font-medium mb-1">
+                          Upload a photo of the building facade
+                        </p>
+                        <p className="text-xs text-on-surface-variant/60">
+                          The AI will identify wall material, windows, roof type, insulation signs, cracks & degradation
+                        </p>
+                      </label>
+                    ) : (
+                      <div className="relative rounded-2xl overflow-hidden border border-surface-container-high">
+                        <img
+                          src={imagePreview}
+                          alt="Building preview"
+                          className="w-full max-h-64 object-cover"
+                        />
+                        <div className="absolute top-3 right-3 flex gap-2">
+                          <button
+                            type="button"
+                            onClick={removeImage}
+                            className="w-10 h-10 rounded-full bg-red-500/90 backdrop-blur-sm flex items-center justify-center text-white hover:bg-red-600 transition-colors shadow-lg"
+                          >
+                            <span className="material-symbols-outlined text-lg">close</span>
+                          </button>
+                        </div>
+                        <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/60 to-transparent px-4 py-3">
+                          <div className="flex items-center gap-2 text-white/90">
+                            <span className="material-symbols-outlined text-sm fill-icon">
+                              check_circle
+                            </span>
+                            <span className="text-xs font-bold">
+                              Photo ready — AI will analyze during assessment
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Footprint Area */}
+                  <div className="space-y-2">
+                    <label className="block text-sm font-bold text-on-surface-variant ml-1">
+                      Ground Floor Area
+                    </label>
+                    <div className="relative">
+                      <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-primary">
+                        straighten
+                      </span>
+                      <input
+                        className="w-full bg-surface-container-highest/40 border-none rounded-2xl pl-12 pr-16 py-4 focus:ring-2 focus:ring-primary transition-all text-on-surface placeholder:text-outline/50"
+                        placeholder="e.g. 800"
+                        type="number"
+                        value={form.footprintArea}
+                        onChange={set("footprintArea")}
+                      />
+                      <span className="absolute right-5 top-1/2 -translate-y-1/2 text-sm font-bold text-emerald-700">
+                        m²
+                      </span>
+                    </div>
+                    <p className="text-xs text-on-surface-variant/60 ml-1">
+                      Optional — improves heat-loss accuracy. The AI estimates everything else from the photo.
                     </p>
                   </div>
 
-                  {billFiles.length > 0 && (
-                    <ul className="space-y-2">
-                      {billFiles.map((f) => (
-                        <li
-                          key={f.name}
-                          className="flex items-center gap-3 px-4 py-3 bg-emerald-50 rounded-xl text-sm text-emerald-800"
-                        >
-                          <span className="material-symbols-outlined text-base">description</span>
-                          <span className="font-medium truncate">{f.name}</span>
-                          <span className="ml-auto text-emerald-600 text-xs">
-                            {(f.size / 1024).toFixed(0)} KB
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
+                  {/* Utility Bills Upload */}
+                  <div className="space-y-2">
+                    <label className="block text-sm font-bold text-on-surface-variant ml-1">
+                      Utility Bills
+                    </label>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      multiple
+                      accept=".pdf,image/png,image/jpeg,image/tiff,image/gif,image/webp"
+                      className="hidden"
+                      onChange={handleFileChange}
+                    />
+                    <div
+                      className="border-2 border-dashed border-outline-variant/30 rounded-2xl p-8 text-center cursor-pointer hover:border-primary/40 hover:bg-emerald-50/30 transition-all"
+                      onClick={() => fileInputRef.current?.click()}
+                      onDrop={handleDrop}
+                      onDragOver={(e) => e.preventDefault()}
+                    >
+                      <span className="material-symbols-outlined text-4xl text-on-surface-variant/40 mb-3 block">
+                        upload_file
+                      </span>
+                      <p className="text-on-surface-variant font-medium mb-1">
+                        Drag & drop utility bills here, or click to browse
+                      </p>
+                      <p className="text-xs text-on-surface-variant/60">
+                        PDF or images — optional but enables accurate energy cost analysis
+                      </p>
+                    </div>
 
-                  <p className="text-sm text-on-surface-variant">
-                    Utility bills are optional but enable accurate energy cost analysis.
-                    The AI extracts consumption, tariff rates, and annual costs automatically.
-                  </p>
+                    {billFiles.length > 0 && (
+                      <ul className="space-y-2">
+                        {billFiles.map((f) => (
+                          <li
+                            key={f.name}
+                            className="flex items-center gap-3 px-4 py-3 bg-emerald-50 rounded-xl text-sm text-emerald-800"
+                          >
+                            <span className="material-symbols-outlined text-base">description</span>
+                            <span className="font-medium truncate">{f.name}</span>
+                            <span className="ml-auto text-emerald-600 text-xs">
+                              {(f.size / 1024).toFixed(0)} KB
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
                 </div>
               )}
 
@@ -431,6 +532,36 @@ export default function IntakeForm() {
                       </span>
                     </div>
                   ))}
+
+                  {/* Building Photo */}
+                  {imagePreview && (
+                    <div className="pt-2">
+                      <h4 className="text-sm font-bold text-primary uppercase tracking-wider mb-3">
+                        Building Photo
+                      </h4>
+                      <img
+                        src={imagePreview}
+                        alt="Building"
+                        className="w-full max-h-48 object-cover rounded-xl border border-surface-container-high"
+                      />
+                      <p className="text-xs text-on-surface-variant mt-2">
+                        AI will visually analyze this photo for wall material, cracks, insulation signs, and more.
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Building Details subsection */}
+                  {form.footprintArea && (
+                    <>
+                      <h4 className="text-sm font-bold text-primary uppercase tracking-wider pt-2">
+                        Building Details
+                      </h4>
+                      <div className="flex justify-between items-start py-3 border-b border-surface-container-high last:border-none">
+                        <span className="text-sm font-bold text-on-surface-variant">Ground Floor Area</span>
+                        <span className="text-sm text-on-surface text-right">{form.footprintArea} m²</span>
+                      </div>
+                    </>
+                  )}
                 </div>
               )}
             </section>
@@ -466,7 +597,7 @@ export default function IntakeForm() {
                     </>
                   ) : (
                     <>
-                      {step === 0 && "Continue to Supporting Info"}
+                      {step === 0 && "Continue to Building Details"}
                       {step === 1 && "Continue to Review"}
                       {step === 2 && "Run Analysis"}
                       <span className="material-symbols-outlined">arrow_forward</span>

@@ -15,7 +15,7 @@ export default defineConfig({
         rewrite: (path) => path.replace(/^\/api/, ""),
       },
       "/bill-api": {
-        target: "http://localhost:8001",
+        target: "http://localhost:8002",
         rewrite: (path) => path.replace(/^\/bill-api/, ""),
       },
     },

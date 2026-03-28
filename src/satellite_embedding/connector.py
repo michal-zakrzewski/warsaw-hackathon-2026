@@ -35,10 +35,12 @@ def sample_point(lon: float, lat: float, year: int) -> dict[str, float]:
     """Sample the embedding at a WGS84 point (~10 m scale). Returns band -> value."""
     img = embedding_image(year)
     point = ee.Geometry.Point([lon, lat])
-    # Small buffer so sampling has a non-degenerate region at the target scale.
     region = point.buffer(15)
     fc = img.sample(region=region, scale=10, numPixels=1, geometries=False)
-    props = fc.first().getInfo().get("properties") or {}
+    feature = fc.first().getInfo()
+    if feature is None:
+        return {}
+    props = feature.get("properties") or {}
     return {k: float(v) for k, v in props.items() if k in BANDS}
 
 
@@ -47,7 +49,7 @@ def compare_years(
     lat: float,
     year_a: int,
     year_b: int,
-) -> dict[str, float]:
+) -> dict:
     """Dot-product similarity between embeddings at the same point in two years.
 
     Returns a value between -1 and 1 (unit-length vectors). A score near 1.0
@@ -55,6 +57,13 @@ def compare_years(
     """
     vec_a = sample_point(lon, lat, year_a)
     vec_b = sample_point(lon, lat, year_b)
+    if not vec_a or not vec_b:
+        return {
+            "similarity": None,
+            "year_a": year_a,
+            "year_b": year_b,
+            "error": "No satellite embedding data found for the given coordinates/year.",
+        }
     shared = sorted(set(vec_a) & set(vec_b))
     dot = sum(vec_a[k] * vec_b[k] for k in shared)
     return {"similarity": dot, "year_a": year_a, "year_b": year_b}

@@ -71,6 +71,25 @@ visual analysis of any images provided or reasonable defaults when no images \
 are given. Use `estimate_building_geometry` first if the user asks only about \
 dimensions without requesting a heat-loss calculation.
 
+- **When a building photograph is attached:** carefully examine the image \
+before calling `estimate_heat_loss`. Look for:
+  - Exterior wall finish (plaster, brick face, concrete, siding, sandwich \
+panels, glass curtain wall, metal cladding)
+  - Structural system (brick, concrete, timber frame, steel frame)
+  - Roof covering (metal sheet, ceramic tile, bitumen membrane, etc.) and \
+shape (flat, gable, hip, shed, mansard, sawtooth)
+  - Window type (single/double/triple glazed — look at frame thickness, \
+spacer bars, glass tint)
+  - Visible external insulation (EWI / ETICS systems, foam board edges)
+  - Cracks in facade or around windows
+  - Facade degradation (peeling paint, staining, efflorescence, moss)
+  - Thermal bridge risk (uninsulated lintels, balcony connections, steel \
+beams penetrating the envelope)
+  Set `vision_confidence` to reflect how clearly you can observe these \
+features (e.g. 0.9 for a clear daytime close-up, 0.5 for a blurry or \
+distant shot). Describe what you see in your response so the user \
+understands how the photo influenced the estimate.
+
 - For heat-loss results: present the base estimate prominently, mention the \
 low–high range, explain the main sources of uncertainty, and include the \
 disclaimers from the response. Always recommend a professional audit for \

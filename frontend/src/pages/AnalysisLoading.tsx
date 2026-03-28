@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { createSession, runAgent, extractAgentText } from "../api/agent";
+import { createSession, runAgent, extractAgentText, type MessagePart } from "../api/agent";
 import type { IntakeFormData } from "../types";
 
 const STATUS_STEPS = [
   "Understanding your business...",
-  "Reviewing uploaded information...",
-  "Estimating project options...",
+  "Analyzing building envelope...",
+  "Estimating heat loss & solar potential...",
   "Matching financing opportunities...",
   "Preparing recommendation...",
 ];
@@ -33,7 +33,13 @@ export default function AnalysisLoading() {
     const userId = `user_${Date.now()}`;
     const sessionId = `session_${Date.now()}`;
 
-    const prompt = [
+    // Build multimodal message parts
+    const imageRaw = sessionStorage.getItem("buildingImage");
+    const hasImage = !!imageRaw;
+
+    const hasFootprint = !!form.footprintArea;
+
+    const promptText = [
       `Analyze this business for green financing eligibility:`,
       `Business: ${form.businessName} (${form.businessType})`,
       `Location: ${form.address}`,
@@ -44,11 +50,48 @@ export default function AnalysisLoading() {
       voiceContext
         ? `\nAdditional context from voice interview with the owner:\n${voiceContext}`
         : "",
+      ...(hasImage
+        ? [``, `IMPORTANT: A building photograph is attached. Analyze it visually to identify: wall finish material, wall structure, roof covering, roof type, window type, visible insulation signs, cracks, facade degradation, thermal bridge risks, number of floors, and building type. Use your observations to call the estimate_heat_loss tool with accurate visual feature parameters.`]
+        : []),
+      ...(hasFootprint
+        ? [``, `Ground floor area provided by the user: ${form.footprintArea} m². Pass this as footprint_area_m2 to estimate_heat_loss.`]
+        : []),
       ``,
       `Provide: recommended financing path, estimated payback period, annual savings, CO2 reduction, and comparison of at least 3 project types.`,
+      ``,
+      `IMPORTANT: At the very END of your response, include a fenced JSON block with key metrics extracted from your analysis. Use null for any value you cannot determine:`,
+      "```json",
+      `{`,
+      `  "heat_loss_kw": <base heat loss in kW or null>,`,
+      `  "heat_loss_range": "<low–high kW range as string or null>",`,
+      `  "dominant_loss_source": "<walls|roof|windows|infiltration or null>",`,
+      `  "solar_panels": <panel count or null>,`,
+      `  "solar_output_kwh": <annual kWh or null>,`,
+      `  "co2_reduction_tons": <annual tons or null>,`,
+      `  "estimated_payback_years": <best project payback in years or null>,`,
+      `  "annual_savings_usd": <best project annual savings USD or null>,`,
+      `  "recommended_project": "<short project title or null>",`,
+      `  "geometry_confidence": <0-1 or null>,`,
+      `  "site_stability_score": <satellite similarity score 0-1 or null>,`,
+      `  "insights": [`,
+      `    {"icon": "<material symbol name>", "title": "<short benefit title>", "description": "<1-2 sentence explanation of why this matters for the business>"}`,
+      `  ]`,
+      `}`,
+      ``,
+      `For "insights": provide exactly 3 compelling reasons why your recommended project is the best option for THIS specific business. Use relevant Material Symbols icon names (e.g. thermostat, solar_power, savings, eco, speed, shield, trending_down, construction, bolt, air). Make each insight specific to the analysis results — reference actual numbers, dominant loss sources, or site-specific findings. Do NOT use generic filler.`,
+      "```",
     ]
       .filter(Boolean)
       .join("\n");
+
+    const parts: MessagePart[] = [{ text: promptText }];
+
+    if (hasImage) {
+      const { base64, mimeType } = JSON.parse(imageRaw);
+      parts.push({ inline_data: { mime_type: mimeType, data: base64 } });
+    }
+
+    sessionStorage.removeItem("buildingImage");
 
     const stepInterval = setInterval(() => {
       setActiveStep((s) => Math.min(s + 1, STATUS_STEPS.length - 1));
@@ -58,7 +101,7 @@ export default function AnalysisLoading() {
     (async () => {
       try {
         await createSession(userId, sessionId);
-        const events = await runAgent(userId, sessionId, prompt);
+        const events = await runAgent(userId, sessionId, parts);
         const text = extractAgentText(events);
         sessionStorage.setItem("result", JSON.stringify({ agentText: text, formData: form, voiceContext }));
         setProgress(100);

@@ -16,10 +16,14 @@ export interface AgentEvent {
   author?: string;
 }
 
+export type MessagePart =
+  | { text: string }
+  | { inline_data: { mime_type: string; data: string } };
+
 export async function runAgent(
   userId: string,
   sessionId: string,
-  message: string
+  parts: MessagePart[]
 ): Promise<AgentEvent[]> {
   const res = await fetch(`${API_BASE}/run`, {
     method: "POST",
@@ -28,7 +32,7 @@ export async function runAgent(
       app_name: "green_agent",
       user_id: userId,
       session_id: sessionId,
-      new_message: { role: "user", parts: [{ text: message }] },
+      new_message: { role: "user", parts },
     }),
   });
   if (!res.ok) {
