@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import VapiModule from "@vapi-ai/web";
+import type { VoiceExtractedData } from "../types";
 
 // Handle CJS/ESM interop — the package exports `default` as a named property
 const Vapi = (typeof (VapiModule as unknown as { default: unknown }).default === "function"
@@ -20,12 +21,17 @@ interface VoiceConfig {
 
 type CallStatus = "idle" | "loading" | "live" | "ended" | "error";
 
-export default function VoiceChat() {
+interface VoiceChatProps {
+  onExtracted?: (data: VoiceExtractedData) => void;
+}
+
+export default function VoiceChat({ onExtracted }: VoiceChatProps) {
   const [status, setStatus] = useState<CallStatus>("idle");
   const [transcript, setTranscript] = useState<TranscriptMessage[]>([]);
   const [isMuted, setIsMuted] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [extracting, setExtracting] = useState(false);
 
   const vapiRef = useRef<Vapi | null>(null);
   const configRef = useRef<VoiceConfig | null>(null);
@@ -83,7 +89,28 @@ export default function VoiceChat() {
     } catch (err) {
       console.error("Failed to save transcript:", err);
     }
-  }, []);
+
+    if (onExtracted && messages.length > 1) {
+      setExtracting(true);
+      try {
+        const res = await fetch("/api/voice/extract", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ messages }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.extracted) {
+            onExtracted(data.extracted);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to extract from transcript:", err);
+      } finally {
+        setExtracting(false);
+      }
+    }
+  }, [onExtracted]);
 
   const startCall = useCallback(async () => {
     setError(null);
@@ -159,7 +186,7 @@ export default function VoiceChat() {
   }, []);
 
   return (
-    <div className="xl:col-span-5 sticky top-24">
+    <div className="sticky top-24">
       <div className="bg-surface-container-low rounded-[2rem] overflow-hidden flex flex-col h-[680px] border border-surface-container-high relative">
         {/* Header */}
         <div className="p-6 flex items-center justify-between bg-white/40 backdrop-blur-sm border-b border-surface-container-high/50">
@@ -327,18 +354,31 @@ export default function VoiceChat() {
             {/* Ended overlay */}
             {status === "ended" && transcript.length > 0 && (
               <div className="p-6 bg-white/60 border-t border-surface-container-high/50 flex flex-col items-center gap-3">
-                <span className="material-symbols-outlined text-3xl text-emerald-600 fill-icon">
-                  check_circle
-                </span>
-                <p className="text-sm font-bold text-on-surface">
-                  Session Complete — Transcript Saved
-                </p>
-                <button
-                  onClick={restart}
-                  className="px-6 py-3 bg-primary text-on-primary rounded-full font-bold text-sm hover:scale-105 active:scale-95 transition-all"
-                >
-                  Start New Session
-                </button>
+                {extracting ? (
+                  <>
+                    <span className="material-symbols-outlined text-3xl text-amber-500 animate-spin">
+                      progress_activity
+                    </span>
+                    <p className="text-sm font-bold text-on-surface">
+                      Extracting information from conversation...
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <span className="material-symbols-outlined text-3xl text-emerald-600 fill-icon">
+                      check_circle
+                    </span>
+                    <p className="text-sm font-bold text-on-surface">
+                      Session Complete — Data Extracted
+                    </p>
+                    <button
+                      onClick={restart}
+                      className="px-6 py-3 bg-primary text-on-primary rounded-full font-bold text-sm hover:scale-105 active:scale-95 transition-all"
+                    >
+                      Start New Session
+                    </button>
+                  </>
+                )}
               </div>
             )}
           </>

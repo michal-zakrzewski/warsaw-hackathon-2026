@@ -1,7 +1,7 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { processBills } from "../api/bills";
-import type { IntakeFormData } from "../types";
+import type { IntakeFormData, VoiceExtractedData } from "../types";
 import VoiceChat from "../components/VoiceChat";
 
 const BUSINESS_TYPES = [
@@ -82,6 +82,8 @@ export default function IntakeForm() {
   const [billsProcessing, setBillsProcessing] = useState(false);
   const [billsError, setBillsError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [voiceContext, setVoiceContext] = useState<string | null>(null);
+  const [voiceFilled, setVoiceFilled] = useState(false);
   const [form, setForm] = useState<IntakeFormData>({
     businessName: "",
     businessType: BUSINESS_TYPES[0],
@@ -92,6 +94,35 @@ export default function IntakeForm() {
     estimatedBudget: "$15,000 - $50,000",
     sustainabilityGoal: "",
   });
+
+  const handleVoiceExtracted = useCallback((data: VoiceExtractedData) => {
+    setForm((prev) => {
+      const updated = { ...prev };
+      if (data.businessName && !prev.businessName) updated.businessName = data.businessName;
+      if (data.businessType) {
+        const match = BUSINESS_TYPES.find(
+          (t) => t.toLowerCase().includes(data.businessType!.toLowerCase())
+        );
+        if (match && prev.businessType === BUSINESS_TYPES[0]) updated.businessType = match;
+      }
+      if (data.address && !prev.address) updated.address = data.address;
+      if (data.latitude && !prev.latitude) updated.latitude = data.latitude;
+      if (data.longitude && !prev.longitude) updated.longitude = data.longitude;
+      if (data.annualEnergy && !prev.annualEnergy) updated.annualEnergy = data.annualEnergy;
+      if (data.estimatedBudget && prev.estimatedBudget === "$15,000 - $50,000") {
+        updated.estimatedBudget = data.estimatedBudget;
+      }
+      if (data.sustainabilityGoal && !prev.sustainabilityGoal) {
+        updated.sustainabilityGoal = data.sustainabilityGoal;
+      }
+      return updated;
+    });
+
+    if (data.additionalContext) {
+      setVoiceContext(data.additionalContext);
+    }
+    setVoiceFilled(true);
+  }, []);
 
   const set =
     (field: keyof IntakeFormData) =>
@@ -128,6 +159,7 @@ export default function IntakeForm() {
       }
       sessionStorage.setItem("intake", JSON.stringify(form));
       if (billResult) sessionStorage.setItem("billIntelligence", JSON.stringify(billResult));
+      if (voiceContext) sessionStorage.setItem("voiceContext", voiceContext);
       navigate("/loading");
     } catch (err) {
       setBillsError(err instanceof Error ? err.message : "Bill processing failed");
@@ -446,7 +478,19 @@ export default function IntakeForm() {
           </div>
 
           {/* Right Column: Voice Assistant */}
-          <VoiceChat />
+          <div className="xl:col-span-5 space-y-4">
+            {voiceFilled && (
+              <div className="flex items-center gap-3 px-5 py-3 bg-emerald-50 border border-emerald-200 rounded-2xl">
+                <span className="material-symbols-outlined text-emerald-600 fill-icon text-lg">
+                  check_circle
+                </span>
+                <p className="text-sm font-medium text-emerald-800">
+                  Voice data applied to the form. Review and adjust if needed.
+                </p>
+              </div>
+            )}
+            <VoiceChat onExtracted={handleVoiceExtracted} />
+          </div>
         </div>
       </main>
     </>

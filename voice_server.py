@@ -6,14 +6,18 @@ from pathlib import Path
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from google import genai
 from pydantic import BaseModel
 
 load_dotenv()
 
 VAPI_PUBLIC_KEY = os.getenv("VAPI_PUBLIC_KEY", "")
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY", "")
 QUESTIONS_PATH = Path(__file__).parent / "questions.json"
 TRANSCRIPTS_DIR = Path(__file__).parent / "transcripts"
 TRANSCRIPTS_DIR.mkdir(exist_ok=True)
+
+gemini_client = genai.Client(api_key=GOOGLE_API_KEY) if GOOGLE_API_KEY else None
 
 app = FastAPI(title="Voice Interview API")
 
@@ -123,3 +127,70 @@ def save_transcript(payload: TranscriptPayload):
     filepath = TRANSCRIPTS_DIR / filename
     filepath.write_text(json.dumps(payload.model_dump(), indent=2))
     return {"status": "saved", "filename": filename}
+
+
+EXTRACTION_PROMPT = """\
+You are a data extraction assistant. Below is a transcript of a voice \
+interview with a farmer or business owner about their green investment needs.
+
+Extract as much structured information as possible into the following JSON \
+schema. Use null for any field the user did not mention or that cannot be \
+reasonably inferred. Do NOT make up data — only extract what was actually said.
+
+Return ONLY valid JSON, no markdown fences, no commentary.
+
+Schema:
+{
+  "businessName": string | null,
+  "businessType": string | null,
+  "address": string | null,
+  "latitude": string | null,
+  "longitude": string | null,
+  "annualEnergy": string | null,        // in kWh if mentioned
+  "estimatedBudget": string | null,
+  "sustainabilityGoal": string | null,
+  "additionalContext": string | null     // any other useful details the user \
+shared (farm size, existing equipment, buildings, previous grant experience, \
+energy sources, etc.) as a concise paragraph
+}
+
+Transcript:
+"""
+
+
+class ExtractPayload(BaseModel):
+    messages: list[TranscriptMessage]
+
+
+@app.post("/voice/extract")
+def extract_from_transcript(payload: ExtractPayload):
+    if not gemini_client:
+        return {"error": "GOOGLE_API_KEY not configured"}, 500
+
+    conversation = "\n".join(
+        f"{msg.role.upper()}: {msg.content}" for msg in payload.messages if msg.content
+    )
+
+    questions_data = load_questions()
+    questions_list = "\n".join(
+        f"- {q}" for q in questions_data.get("questions", [])
+    )
+    context_hint = (
+        f"\n\nThe interview was designed to cover these topics:\n{questions_list}\n"
+    )
+
+    response = gemini_client.models.generate_content(
+        model="gemini-2.5-flash",
+        contents=EXTRACTION_PROMPT + conversation + context_hint,
+    )
+
+    raw = response.text.strip()
+    if raw.startswith("```"):
+        raw = raw.split("\n", 1)[1].rsplit("```", 1)[0].strip()
+
+    try:
+        extracted = json.loads(raw)
+    except json.JSONDecodeError:
+        return {"error": "Failed to parse extraction result", "raw": raw}
+
+    return {"extracted": extracted}

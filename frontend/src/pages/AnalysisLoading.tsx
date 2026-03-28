@@ -28,6 +28,7 @@ export default function AnalysisLoading() {
     }
 
     const form: IntakeFormData = JSON.parse(raw);
+    const voiceContext = sessionStorage.getItem("voiceContext");
 
     const userId = `user_${Date.now()}`;
     const sessionId = `session_${Date.now()}`;
@@ -40,6 +41,9 @@ export default function AnalysisLoading() {
       form.annualEnergy ? `Annual energy usage: ${form.annualEnergy} kWh` : "",
       `Budget: ${form.estimatedBudget}`,
       form.sustainabilityGoal ? `Goal: ${form.sustainabilityGoal}` : "",
+      voiceContext
+        ? `\nAdditional context from voice interview with the owner:\n${voiceContext}`
+        : "",
       ``,
       `Provide: recommended financing path, estimated payback period, annual savings, CO2 reduction, and comparison of at least 3 project types.`,
     ]
@@ -56,7 +60,7 @@ export default function AnalysisLoading() {
         await createSession(userId, sessionId);
         const events = await runAgent(userId, sessionId, prompt);
         const text = extractAgentText(events);
-        sessionStorage.setItem("result", JSON.stringify({ agentText: text, formData: form }));
+        sessionStorage.setItem("result", JSON.stringify({ agentText: text, formData: form, voiceContext }));
         setProgress(100);
         clearInterval(stepInterval);
         setTimeout(() => navigate("/results"), 600);
