@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import type { IntakeFormData } from "../types";
+import VoiceChat from "../components/VoiceChat";
 
 const BUSINESS_TYPES = [
   "SME (Small/Medium Enterprise)",
@@ -72,97 +73,6 @@ function Sidebar({ current }: { current: number }) {
   );
 }
 
-function AssistantPanel() {
-  return (
-    <div className="xl:col-span-5 sticky top-24">
-      <div className="bg-surface-container-low rounded-[2rem] overflow-hidden flex flex-col h-[680px] border border-surface-container-high relative">
-        {/* Header */}
-        <div className="p-6 flex items-center justify-between bg-white/40 backdrop-blur-sm border-b border-surface-container-high/50">
-          <div className="flex items-center gap-3">
-            <div className="w-3 h-3 bg-emerald-500 rounded-full animate-pulse" />
-            <h3 className="font-bold text-on-surface tracking-tight">Assistant Live</h3>
-          </div>
-          <button className="w-10 h-10 rounded-full bg-white/80 flex items-center justify-center text-on-surface-variant hover:bg-white transition-colors">
-            <span className="material-symbols-outlined text-xl">settings</span>
-          </button>
-        </div>
-
-        {/* Voice Visualizer */}
-        <div className="px-6 py-10 flex flex-col items-center justify-center gap-4 bg-emerald-50/30">
-          <div className="relative">
-            <div className="absolute inset-0 scale-150 rounded-full border border-emerald-200 animate-ping opacity-20" />
-            <div className="absolute inset-0 scale-125 rounded-full border border-emerald-300 animate-ping opacity-30" />
-            <div className="w-20 h-20 bg-primary-gradient rounded-full flex items-center justify-center text-white shadow-xl z-10 relative">
-              <span className="material-symbols-outlined text-3xl fill-icon">mic</span>
-            </div>
-          </div>
-          <p className="text-sm font-bold text-emerald-800 uppercase tracking-widest">
-            Listening...
-          </p>
-        </div>
-
-        {/* Chat Transcript */}
-        <div className="flex-grow p-6 overflow-y-auto space-y-6 flex flex-col">
-          {/* AI Bubble */}
-          <div className="flex gap-3 max-w-[90%]">
-            <div className="w-8 h-8 rounded-full bg-emerald-600 flex-shrink-0 flex items-center justify-center text-white text-[10px] font-bold">
-              GQ
-            </div>
-            <div className="bg-white rounded-2xl rounded-tl-none p-4 shadow-sm border border-emerald-50/50">
-              <p className="text-sm text-on-surface leading-relaxed italic">
-                "I see you are a small factory. Would you like to prioritize grants for
-                energy-efficiency upgrades like LED lighting or HVAC retrofits?"
-              </p>
-            </div>
-          </div>
-
-          {/* User Bubble */}
-          <div className="flex gap-3 max-w-[90%] self-end flex-row-reverse">
-            <div className="w-8 h-8 rounded-full bg-slate-200 flex-shrink-0 flex items-center justify-center text-slate-600">
-              <span className="material-symbols-outlined text-sm">person</span>
-            </div>
-            <div className="bg-primary text-on-primary rounded-2xl rounded-tr-none p-4 shadow-sm">
-              <p className="text-sm font-medium">"Yes, both please."</p>
-            </div>
-          </div>
-
-          <div className="flex-grow" />
-
-          {/* Suggestion Chips */}
-          <div className="flex flex-wrap gap-2">
-            <div className="px-4 py-2 bg-white/60 hover:bg-white border border-surface-container-high rounded-full text-xs font-semibold text-on-surface-variant cursor-pointer transition-all">
-              Tell me about LED grants
-            </div>
-            <div className="px-4 py-2 bg-white/60 hover:bg-white border border-surface-container-high rounded-full text-xs font-semibold text-on-surface-variant cursor-pointer transition-all">
-              How much can I save?
-            </div>
-          </div>
-        </div>
-
-        {/* Bottom Input */}
-        <div className="p-6 bg-white/40 border-t border-surface-container-high/50 flex gap-4">
-          <div className="flex-grow bg-white rounded-2xl px-4 py-3 border border-surface-container-high flex items-center">
-            <input
-              className="w-full border-none focus:ring-0 text-sm bg-transparent"
-              placeholder="Type or ask follow-up..."
-              type="text"
-            />
-          </div>
-          <button className="w-12 h-12 rounded-2xl bg-primary flex items-center justify-center text-on-primary hover:bg-primary-container transition-all">
-            <span className="material-symbols-outlined">send</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Decorative */}
-      <div className="mt-6 flex items-center justify-center gap-4 opacity-40">
-        <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">
-          Powering Sustainable Growth
-        </p>
-      </div>
-    </div>
-  );
-}
 
 export default function IntakeForm() {
   const navigate = useNavigate();
@@ -452,8 +362,8 @@ export default function IntakeForm() {
             </div>
           </div>
 
-          {/* Right Column: Assistant Live Panel */}
-          <AssistantPanel />
+          {/* Right Column: Voice Assistant */}
+          <VoiceChat />
         </div>
       </main>
     </>

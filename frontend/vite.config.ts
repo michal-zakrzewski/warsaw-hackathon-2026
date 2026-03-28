@@ -6,6 +6,10 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
     proxy: {
+      "/api/voice": {
+        target: "http://localhost:8001",
+        rewrite: (path) => path.replace(/^\/api/, ""),
+      },
       "/api": {
         target: "http://localhost:8000",
         rewrite: (path) => path.replace(/^\/api/, ""),
