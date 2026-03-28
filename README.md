@@ -255,7 +255,9 @@ This project implements several security hardening measures:
 Built at the **Warsaw Google Hackathon 2026** by:
 
 - [Michal Zakrzewski](https://github.com/michal-zakrzewski)
-- [Pablo Knappo](https://github.com/pabloknappo)
+- [Paweł Knap](https://github.com/pabloknappo)
+- [Mykola Vysotskyi](https://github.com/mvysotskyi)
+- [Taras Rumezhak](https://github.com/tarasrumezhak)
 
 ---
 
