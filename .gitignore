@@ -163,3 +163,5 @@ cython_debug/
 
 .adk/
 *.zip
+frontend/.vite/
+frontend/dist/
