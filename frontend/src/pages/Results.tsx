@@ -2,20 +2,47 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import type { AnalysisResult } from "../types";
 
+function fmtK(n: number) { return "$" + (n / 1000).toFixed(1) + "k"; }
+function fmtUSD(n: number) { return "$" + n.toLocaleString("en-US"); }
+
+function calcComparison(annualKwh: number, importRate: number) {
+  const systemKw = annualKwh / 1400;
+  const solarUpfront = Math.round(systemKw * 2450 / 1000) * 1000;
+  const solarSavings = annualKwh * importRate * 0.72;
+  const storageUpfront = Math.round(solarUpfront * 1.55 / 1000) * 1000;
+  const storageSavings = solarSavings * 1.52;
+  const retrofitUpfront = Math.round(solarUpfront * 0.47 / 1000) * 1000;
+  const retrofitSavings = solarSavings * 0.40;
+  const paybackYears = storageUpfront / storageSavings;
+  const co2Tons = Math.round(annualKwh * 0.000386 * 0.72);
+  return { solarUpfront, solarSavings, storageUpfront, storageSavings, retrofitUpfront, retrofitSavings, paybackYears, co2Tons };
+}
+
 export default function Results() {
   const navigate = useNavigate();
   const [result, setResult] = useState<AnalysisResult | null>(null);
+  const [bills, setBills] = useState<{ annual_electricity_kwh: number; annual_bill_cost: number; electricity_import_rate_per_kwh: number } | null>(null);
 
   useEffect(() => {
     const raw = sessionStorage.getItem("result");
-    if (!raw) {
-      navigate("/intake");
-      return;
-    }
+    if (!raw) { navigate("/intake"); return; }
     setResult(JSON.parse(raw));
+    const billRaw = sessionStorage.getItem("billIntelligence");
+    if (billRaw) {
+      try {
+        const di = JSON.parse(billRaw).derived_inputs;
+        if (di?.annual_electricity_kwh && di?.electricity_import_rate_per_kwh) {
+          setBills({ annual_electricity_kwh: di.annual_electricity_kwh, annual_bill_cost: di.annual_bill_cost, electricity_import_rate_per_kwh: di.electricity_import_rate_per_kwh });
+        }
+      } catch {}
+    }
   }, [navigate]);
 
   if (!result) return null;
+
+  const annualKwh = bills?.annual_electricity_kwh ?? 95000;
+  const importRate = bills?.electricity_import_rate_per_kwh ?? 0.147;
+  const comp = calcComparison(annualKwh, importRate);
 
   return (
     <main className="pt-24 pb-20 px-4 md:px-12 max-w-7xl mx-auto">
@@ -60,7 +87,7 @@ export default function Results() {
             <span className="material-symbols-outlined text-primary">calendar_today</span>
           </div>
           <div className="flex items-baseline gap-1">
-            <span className="text-4xl font-extrabold tracking-tighter">4.2</span>
+            <span className="text-4xl font-extrabold tracking-tighter">{comp.paybackYears.toFixed(1)}</span>
             <span className="text-on-surface-variant font-semibold">years</span>
           </div>
           <div className="mt-4 h-1.5 w-full bg-surface-container-highest rounded-full overflow-hidden">
@@ -76,10 +103,10 @@ export default function Results() {
             <span className="material-symbols-outlined text-primary">payments</span>
           </div>
           <div className="flex items-baseline gap-1">
-            <span className="text-4xl font-extrabold tracking-tighter">$12,450</span>
+            <span className="text-4xl font-extrabold tracking-tighter">{fmtK(comp.storageSavings)}</span>
             <span className="text-on-surface-variant font-semibold">/yr</span>
           </div>
-          <p className="text-primary text-sm font-bold mt-4">+18% vs baseline</p>
+          <p className="text-primary text-sm font-bold mt-4">+{Math.round(comp.storageSavings / (annualKwh * importRate) * 100)}% vs baseline</p>
         </div>
 
         <div className="bg-surface-container-lowest p-8 rounded-xl shadow-sm border border-outline-variant/10">
@@ -90,10 +117,10 @@ export default function Results() {
             <span className="material-symbols-outlined text-primary">eco</span>
           </div>
           <div className="flex items-baseline gap-1">
-            <span className="text-4xl font-extrabold tracking-tighter">18.5</span>
+            <span className="text-4xl font-extrabold tracking-tighter">{comp.co2Tons}</span>
             <span className="text-on-surface-variant font-semibold">tons</span>
           </div>
-          <p className="text-on-surface-variant text-xs mt-4">Equivalent to 425 trees planted</p>
+          <p className="text-on-surface-variant text-xs mt-4">Equivalent to {Math.round(comp.co2Tons * 23)} trees planted</p>
         </div>
       </div>
 
@@ -255,13 +282,13 @@ export default function Results() {
                     <span className="font-bold">Solar Only</span>
                   </div>
                 </td>
-                <td className="px-8 py-6 font-medium text-on-surface-variant">$245,000</td>
+                <td className="px-8 py-6 font-medium text-on-surface-variant">{fmtUSD(comp.solarUpfront)}</td>
                 <td className="px-8 py-6">
                   <span className="px-3 py-1 bg-surface-container text-on-surface-variant rounded-full text-xs font-bold">
                     Medium
                   </span>
                 </td>
-                <td className="px-8 py-6 font-bold text-primary">+$8.2k/yr</td>
+                <td className="px-8 py-6 font-bold text-primary">+{fmtK(comp.solarSavings)}/yr</td>
               </tr>
               <tr className="bg-primary/5">
                 <td className="px-8 py-6">
@@ -270,13 +297,13 @@ export default function Results() {
                     <span className="font-bold">Solar + Storage</span>
                   </div>
                 </td>
-                <td className="px-8 py-6 font-medium text-on-surface-variant">$380,000</td>
+                <td className="px-8 py-6 font-medium text-on-surface-variant">{fmtUSD(comp.storageUpfront)}</td>
                 <td className="px-8 py-6">
                   <span className="px-3 py-1 bg-primary text-on-primary rounded-full text-xs font-bold">
                     High (Best)
                   </span>
                 </td>
-                <td className="px-8 py-6 font-bold text-primary">+$12.4k/yr</td>
+                <td className="px-8 py-6 font-bold text-primary">+{fmtK(comp.storageSavings)}/yr</td>
               </tr>
               <tr className="hover:bg-primary/5 transition-colors">
                 <td className="px-8 py-6">
@@ -285,13 +312,13 @@ export default function Results() {
                     <span className="font-bold">Efficiency Retrofit</span>
                   </div>
                 </td>
-                <td className="px-8 py-6 font-medium text-on-surface-variant">$115,000</td>
+                <td className="px-8 py-6 font-medium text-on-surface-variant">{fmtUSD(comp.retrofitUpfront)}</td>
                 <td className="px-8 py-6">
                   <span className="px-3 py-1 bg-surface-container text-on-surface-variant rounded-full text-xs font-bold">
                     Medium
                   </span>
                 </td>
-                <td className="px-8 py-6 font-bold text-primary">+$4.1k/yr</td>
+                <td className="px-8 py-6 font-bold text-primary">+{fmtK(comp.retrofitSavings)}/yr</td>
               </tr>
             </tbody>
           </table>

@@ -13,21 +13,21 @@ from app.domain.bill_intelligence_models import BillEntity, BillExtractionResult
 # ---------------------------------------------------------------------------
 
 _CANDIDATES: dict[str, list[str]] = {
-    "provider_name":          ["supplier_name", "vendor_name", "company_name", "utility_provider", "utility name", "biller name"],
-    "account_number":         ["account_number", "account_id", "contract_number", "account no", "account #"],
-    "meter_number":           ["meter_number", "meter_id", "meter_serial", "meter no", "meter #", "meter reading id"],
-    "customer_name":          ["customer_name", "recipient_name", "bill_to_name", "customer", "name"],
-    "service_address":        ["service_address", "service_location", "property_address", "bill_to_address", "service site", "premises address"],
-    "billing_period_start":   ["service_period_start", "service_start_date", "billing_period_start", "start_date", "period_start", "billing from", "service from", "period from", "from date"],
-    "billing_period_end":     ["service_period_end", "service_end_date", "billing_period_end", "end_date", "period_end", "billing to", "service to", "period to", "to date"],
-    "total_amount":           ["total_amount", "total_due", "amount_due", "balance_due", "payment_amount", "total charges", "amount to pay", "total bill", "please pay", "current charges"],
-    "previous_balance":       ["previous_balance", "prior_balance", "carried_forward", "previous balance", "balance forward"],
-    "electricity_import_kwh": ["electricity_usage", "electricity/total_usage", "energy_usage", "total_usage", "kwh_used", "active_energy_import", "electricity/usage", "total kwh", "kwh consumed", "energy consumed", "usage kwh", "electric usage", "electricity consumed"],
-    "electricity_export_kwh": ["electricity_export", "electricity/export_usage", "export_kwh", "energy_export", "active_energy_export", "energy exported", "kwh exported", "feed-in kwh"],
-    "energy_charge_amount":   ["electricity_amount", "electricity/amount", "energy_charge", "energy_cost", "electricity_charge", "energy charges", "electric charges", "supply charge"],
-    "delivery_charge_amount": ["delivery_charge", "distribution_charge", "network_charge", "transmission_charge", "delivery charges", "distribution charges", "network charges"],
-    "fixed_charge_amount":    ["fixed_charge", "standing_charge", "service_charge", "connection_charge", "daily supply charge", "basic service charge", "customer charge"],
-    "taxes_amount":           ["vat_amount", "tax_amount", "taxes", "gst_amount", "vat", "tax", "gst", "sales tax"],
+    "provider_name":          ["provider name", "supplier_name", "vendor_name", "company_name", "utility_provider", "utility name", "biller name"],
+    "account_number":         ["account number", "account_number", "account_id", "contract_number", "account no", "account #"],
+    "meter_number":           ["meter number", "meter_number", "meter_id", "meter_serial", "meter no", "meter #", "meter reading id"],
+    "customer_name":          ["customer name", "customer_name", "recipient_name", "bill_to_name", "customer", "name"],
+    "service_address":        ["service address", "service_address", "service_location", "property_address", "bill_to_address", "service site", "premises address"],
+    "billing_period_start":   ["billing period start", "service_period_start", "service_start_date", "billing_period_start", "start_date", "period_start", "billing from", "service from", "period from", "from date"],
+    "billing_period_end":     ["billing period end", "service_period_end", "service_end_date", "billing_period_end", "end_date", "period_end", "billing to", "service to", "period to", "to date"],
+    "total_amount":           ["total amount due", "total a d", "total_amount", "total_due", "amount_due", "balance_due", "payment_amount", "total charges", "amount to pay", "total bill", "please pay", "current charges"],
+    "previous_balance":       ["previous amount paid", "previous_balance", "prior_balance", "carried_forward", "previous balance", "balance forward"],
+    "electricity_import_kwh": ["electricity import (kwh)", "electricity_usage", "electricity/total_usage", "energy_usage", "total_usage", "kwh_used", "active_energy_import", "electricity/usage", "total kwh", "kwh consumed", "energy consumed", "usage kwh", "electric usage", "electricity consumed"],
+    "electricity_export_kwh": ["electricity export (kwh)", "electricity_export", "electricity/export_usage", "export_kwh", "energy_export", "active_energy_export", "energy exported", "kwh exported", "feed-in kwh"],
+    "energy_charge_amount":   ["energy charge", "electricity_amount", "electricity/amount", "energy_charge", "energy_cost", "electricity_charge", "energy charges", "electric charges", "supply charge"],
+    "delivery_charge_amount": ["delivery charge", "network charge", "delivery_charge", "distribution_charge", "network_charge", "transmission_charge", "delivery charges", "distribution charges", "network charges"],
+    "fixed_charge_amount":    ["fixed charge", "standing charge", "service charge", "fixed_charge", "standing_charge", "service_charge", "connection_charge", "daily supply charge", "basic service charge", "customer charge"],
+    "taxes_amount":           ["taxes", "vat", "tax", "gst", "vat_amount", "tax_amount", "gst_amount", "sales tax"],
     "currency":               ["currency", "currency_code"],
 }
 
@@ -136,16 +136,21 @@ def normalize_bill(extraction: BillExtractionResult) -> NormalizedBill:
 # ---------------------------------------------------------------------------
 
 
+def _normalize_type(raw: str) -> str:
+    """Collapse all whitespace (including newlines) to single spaces, lowercase."""
+    return " ".join(raw.lower().split())
+
+
 def _build_entity_index(entities: list[BillEntity]) -> dict[str, list[BillEntity]]:
     index: dict[str, list[BillEntity]] = {}
     for entity in entities:
-        index.setdefault(entity.type.lower(), []).append(entity)
+        index.setdefault(_normalize_type(entity.type), []).append(entity)
     return index
 
 
 def _pick_entity(index: dict[str, list[BillEntity]], candidates: list[str]) -> BillEntity | None:
     for name in candidates:
-        hits = index.get(name.lower())
+        hits = index.get(_normalize_type(name))
         if hits:
             # Prefer highest confidence
             return max(hits, key=lambda e: e.confidence or 0.0)
