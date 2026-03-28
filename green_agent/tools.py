@@ -3,6 +3,13 @@
 from __future__ import annotations
 
 import os
+import sys
+from pathlib import Path
+
+_project_root = str(Path(__file__).resolve().parent.parent)
+for _p in [_project_root, os.path.join(_project_root, "src")]:
+    if _p not in sys.path:
+        sys.path.insert(0, _p)
 
 from green_agent.heat_loss_tools import estimate_building_geometry, estimate_heat_loss  # noqa: F401
 
@@ -55,10 +62,12 @@ def get_site_embedding(longitude: float, latitude: float, year: int) -> dict:
     Returns:
         A dict mapping band names (A00–A63) to float values.
     """
-    _ensure_ee()
-    from satellite_embedding.connector import sample_point
-
-    return sample_point(longitude, latitude, year)
+    try:
+        _ensure_ee()
+        from satellite_embedding.connector import sample_point
+        return sample_point(longitude, latitude, year)
+    except Exception as e:
+        return {"error": f"Satellite embedding unavailable: {e}"}
 
 
 def compare_site_years(
@@ -83,10 +92,12 @@ def compare_site_years(
     Returns:
         Dict with keys: similarity (float), year_a (int), year_b (int).
     """
-    _ensure_ee()
-    from satellite_embedding.connector import compare_years
-
-    return compare_years(longitude, latitude, year_a, year_b)
+    try:
+        _ensure_ee()
+        from satellite_embedding.connector import compare_years
+        return compare_years(longitude, latitude, year_a, year_b)
+    except Exception as e:
+        return {"error": f"Satellite comparison unavailable: {e}", "year_a": year_a, "year_b": year_b}
 
 
 def get_area_embedding(
@@ -110,10 +121,12 @@ def get_area_embedding(
     Returns:
         Dict mapping band names (A00–A63) to mean float values.
     """
-    _ensure_ee()
-    from satellite_embedding.connector import mean_embedding_in_bbox
-
-    return mean_embedding_in_bbox(lon_min, lat_min, lon_max, lat_max, year)
+    try:
+        _ensure_ee()
+        from satellite_embedding.connector import mean_embedding_in_bbox
+        return mean_embedding_in_bbox(lon_min, lat_min, lon_max, lat_max, year)
+    except Exception as e:
+        return {"error": f"Area embedding unavailable: {e}"}
 
 
 # ---------------------------------------------------------------------------
@@ -134,27 +147,30 @@ def get_solar_potential(latitude: float, longitude: float) -> dict:
     Returns:
         Dict with solar potential summary fields.
     """
-    client = _get_solar_client()
-    building = client.find_closest_building(latitude, longitude)
-    sp = building.solar_potential
-    result: dict = {
-        "building_name": building.name,
-        "imagery_quality": building.imagery_quality,
-    }
-    if sp:
-        result.update(
-            {
-                "max_panels": sp.max_array_panels_count,
-                "panel_capacity_watts": sp.panel_capacity_watts,
-                "max_array_area_m2": sp.max_array_area_meters2,
-                "max_sunshine_hours_per_year": sp.max_sunshine_hours_per_year,
-                "carbon_offset_kg_per_mwh": sp.carbon_offset_factor_kg_per_mwh,
-                "panel_lifetime_years": sp.panel_lifetime_years,
-                "roof_segments": len(sp.roof_segment_stats),
-                "panel_configurations": len(sp.solar_panel_configs),
-            }
-        )
-    return result
+    try:
+        client = _get_solar_client()
+        building = client.find_closest_building(latitude, longitude)
+        sp = building.solar_potential
+        result: dict = {
+            "building_name": building.name,
+            "imagery_quality": building.imagery_quality,
+        }
+        if sp:
+            result.update(
+                {
+                    "max_panels": sp.max_array_panels_count,
+                    "panel_capacity_watts": sp.panel_capacity_watts,
+                    "max_array_area_m2": sp.max_array_area_meters2,
+                    "max_sunshine_hours_per_year": sp.max_sunshine_hours_per_year,
+                    "carbon_offset_kg_per_mwh": sp.carbon_offset_factor_kg_per_mwh,
+                    "panel_lifetime_years": sp.panel_lifetime_years,
+                    "roof_segments": len(sp.roof_segment_stats),
+                    "panel_configurations": len(sp.solar_panel_configs),
+                }
+            )
+        return result
+    except Exception as e:
+        return {"error": f"Solar potential unavailable: {e}"}
 
 
 def get_solar_financials(latitude: float, longitude: float) -> dict:
@@ -170,27 +186,30 @@ def get_solar_financials(latitude: float, longitude: float) -> dict:
     Returns:
         Dict with financial analysis fields.
     """
-    client = _get_solar_client()
-    building = client.find_closest_building(latitude, longitude)
-    sp = building.solar_potential
-    result: dict = {"building_name": building.name}
-    if sp and sp.financial_analyses:
-        fa = sp.financial_analyses[-1]
-        fd = fa.financial_details
-        if fd:
-            result["initial_ac_kwh_per_year"] = fd.initial_ac_kwh_per_year
-            result["net_metering_allowed"] = fd.net_metering_allowed
-            if fd.solar_percentage is not None:
-                result["solar_percentage"] = fd.solar_percentage
-            if fd.cash_purchase_savings:
-                cps = fd.cash_purchase_savings
-                if cps.payback_years is not None:
-                    result["payback_years"] = cps.payback_years
-                if cps.savings:
-                    result["lifetime_savings_units"] = cps.savings.units
-                    result["lifetime_savings_currency"] = cps.savings.currency_code
-            if fd.federal_incentive:
-                result["federal_incentive_units"] = fd.federal_incentive.units
-    if not result.get("initial_ac_kwh_per_year"):
-        result["note"] = "No financial analysis available for this location."
-    return result
+    try:
+        client = _get_solar_client()
+        building = client.find_closest_building(latitude, longitude)
+        sp = building.solar_potential
+        result: dict = {"building_name": building.name}
+        if sp and sp.financial_analyses:
+            fa = sp.financial_analyses[-1]
+            fd = fa.financial_details
+            if fd:
+                result["initial_ac_kwh_per_year"] = fd.initial_ac_kwh_per_year
+                result["net_metering_allowed"] = fd.net_metering_allowed
+                if fd.solar_percentage is not None:
+                    result["solar_percentage"] = fd.solar_percentage
+                if fd.cash_purchase_savings:
+                    cps = fd.cash_purchase_savings
+                    if cps.payback_years is not None:
+                        result["payback_years"] = cps.payback_years
+                    if cps.savings:
+                        result["lifetime_savings_units"] = cps.savings.units
+                        result["lifetime_savings_currency"] = cps.savings.currency_code
+                if fd.federal_incentive:
+                    result["federal_incentive_units"] = fd.federal_incentive.units
+        if not result.get("initial_ac_kwh_per_year"):
+            result["note"] = "No financial analysis available for this location."
+        return result
+    except Exception as e:
+        return {"error": f"Solar financials unavailable: {e}"}

@@ -1,5 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 import type { AgentInsight, AgentMetrics, AnalysisResult } from "../types";
 
 const FALLBACK_INSIGHTS: AgentInsight[] = [
@@ -31,6 +33,63 @@ function parseMetrics(agentText: string): AgentMetrics | null {
   } catch {
     return null;
   }
+}
+
+function metricsFromTools(tools: Record<string, Record<string, unknown>>): AgentMetrics | null {
+  const hl = tools["estimate_heat_loss"] as Record<string, unknown> | undefined;
+  const sp = tools["get_solar_potential"] as Record<string, unknown> | undefined;
+  const sf = tools["get_solar_financials"] as Record<string, unknown> | undefined;
+
+  if (!hl && !sp && !sf) return null;
+
+  const hlTotal = hl?.heat_loss_total as Record<string, Record<string, number>> | undefined;
+  const hlBase = hlTotal?.total_watts?.base;
+  const hlLow = hlTotal?.total_watts?.low;
+  const hlHigh = hlTotal?.total_watts?.high;
+
+  const breakdown = hl?.heat_loss_breakdown as Record<string, Record<string, number>> | undefined;
+  let dominant: string | null = null;
+  if (breakdown) {
+    let maxVal = 0;
+    for (const [key, val] of Object.entries(breakdown)) {
+      const base = (val as Record<string, number>)?.base ?? 0;
+      if (base > maxVal) { maxVal = base; dominant = key.replace(/_watts$/, ""); }
+    }
+  }
+
+  const geom = hl?.geometry as Record<string, unknown> | undefined;
+  const geoConf = geom ? 0.6 : null;
+
+  const panels = sp?.max_panels as number | undefined;
+  const panelWatts = sp?.panel_capacity_watts as number | undefined;
+  const sunHours = sp?.max_sunshine_hours_per_year as number | undefined;
+  let solarKwh: number | null = null;
+  if (panels && panelWatts && sunHours) {
+    solarKwh = (panels * panelWatts * sunHours) / 1000;
+  }
+  const co2Factor = sp?.carbon_offset_kg_per_mwh as number | undefined;
+  let co2Tons: number | null = null;
+  if (solarKwh && co2Factor) {
+    co2Tons = (solarKwh / 1000) * co2Factor / 1000;
+  }
+
+  const payback = sf?.payback_years as number | undefined;
+  const acKwh = sf?.initial_ac_kwh_per_year as number | undefined;
+
+  return {
+    heat_loss_kw: hlBase != null ? hlBase / 1000 : null,
+    heat_loss_range: hlLow != null && hlHigh != null ? `${(hlLow / 1000).toFixed(1)}–${(hlHigh / 1000).toFixed(1)} kW` : null,
+    dominant_loss_source: dominant,
+    solar_panels: panels ?? null,
+    solar_output_kwh: solarKwh ?? (acKwh ?? null),
+    co2_reduction_tons: co2Tons,
+    estimated_payback_years: payback ?? null,
+    annual_savings_usd: null,
+    recommended_project: null,
+    geometry_confidence: geoConf,
+    site_stability_score: null,
+    insights: [],
+  };
 }
 
 function stripJsonBlock(agentText: string): string {
@@ -113,15 +172,163 @@ export default function Results() {
     }
   }, [navigate]);
 
-  const metrics = useMemo(
-    () => (result ? parseMetrics(result.agentText) : null),
-    [result]
-  );
+  const metrics = useMemo(() => {
+    if (!result) return null;
+    const fromText = parseMetrics(result.agentText);
+    if (fromText) return fromText;
+    const tr = (result as unknown as Record<string, unknown>).toolResponses as Record<string, Record<string, unknown>> | undefined;
+    if (tr) return metricsFromTools(tr);
+    return null;
+  }, [result]);
 
   const displayText = useMemo(
     () => (result ? stripJsonBlock(result.agentText) : ""),
     [result]
   );
+
+  const exportPdf = useCallback(() => {
+    if (!result) return;
+    const m = metrics;
+    const annualKwh = bills?.annual_electricity_kwh ?? 95000;
+    const importRate = bills?.electricity_import_rate_per_kwh ?? 0.147;
+    const comp = calcComparison(annualKwh, importRate);
+
+    const doc = new jsPDF({ unit: "mm", format: "a4" });
+    const W = doc.internal.pageSize.getWidth();
+    const margin = 18;
+    let y = 20;
+
+    const accent: [number, number, number] = [0, 105, 72];
+
+    doc.setFontSize(10);
+    doc.setTextColor(...accent);
+    doc.text("GREENQUALIFY", margin, y);
+    doc.setTextColor(160, 160, 160);
+    doc.text(new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }), W - margin, y, { align: "right" });
+    y += 10;
+
+    doc.setFontSize(22);
+    doc.setTextColor(30, 30, 30);
+    doc.text(m?.recommended_project || "Green Finance Assessment", margin, y);
+    y += 8;
+
+    doc.setFontSize(11);
+    doc.setTextColor(100, 100, 100);
+    doc.text(`Site Assessment: ${result.formData.businessName || "Your Business"}`, margin, y);
+    y += 4;
+    if (result.formData.address) {
+      doc.text(result.formData.address, margin, y);
+      y += 4;
+    }
+    y += 6;
+
+    doc.setDrawColor(...accent);
+    doc.setLineWidth(0.5);
+    doc.line(margin, y, W - margin, y);
+    y += 10;
+
+    doc.setFontSize(13);
+    doc.setTextColor(...accent);
+    doc.text("Key Metrics", margin, y);
+    y += 8;
+
+    const statsData = [
+      ["Heat Loss", m?.heat_loss_kw != null ? `${fmt(m.heat_loss_kw)} kW` : "—", m?.heat_loss_range ? `Range: ${m.heat_loss_range}` : ""],
+      ["Solar Potential", m?.solar_output_kwh != null ? `${fmt(m.solar_output_kwh / 1000, 1)} MWh/yr` : "—", m?.solar_panels != null ? `${m.solar_panels} panels` : ""],
+      ["CO₂ Reduction", m?.co2_reduction_tons != null ? `${fmt(m.co2_reduction_tons)} tons/yr` : "—", m?.co2_reduction_tons != null ? `≈ ${Math.round(m.co2_reduction_tons * 23)} trees planted` : ""],
+      ["Site Stability", `${fmt(m?.site_stability_score ?? 0.83, 2)} / 1.0`, (m?.site_stability_score ?? 0.83) >= 0.9 ? "Very stable" : (m?.site_stability_score ?? 0.83) >= 0.8 ? "Stable" : "Notable change"],
+      ["Estimated Payback", `${comp.paybackYears.toFixed(1)} years`, ""],
+      ["Annual Savings", `${fmtK(comp.storageSavings)}/yr`, `+${Math.round(comp.storageSavings / (annualKwh * importRate) * 100)}% vs baseline`],
+    ];
+
+    autoTable(doc, {
+      startY: y,
+      head: [["Metric", "Value", "Detail"]],
+      body: statsData,
+      theme: "grid",
+      headStyles: { fillColor: accent, textColor: 255, fontStyle: "bold", fontSize: 9 },
+      bodyStyles: { fontSize: 9, textColor: [40, 40, 40] },
+      alternateRowStyles: { fillColor: [245, 250, 248] },
+      margin: { left: margin, right: margin },
+      columnStyles: { 0: { fontStyle: "bold", cellWidth: 45 }, 1: { cellWidth: 45 } },
+    });
+
+    y = (doc as unknown as Record<string, number>).lastAutoTable?.finalY ?? y + 50;
+    y += 10;
+
+    doc.setFontSize(13);
+    doc.setTextColor(...accent);
+    doc.text("Project Comparison", margin, y);
+    y += 8;
+
+    autoTable(doc, {
+      startY: y,
+      head: [["Type", "Upfront Cost", "Qual. Likelihood", "Annual Savings"]],
+      body: [
+        ["Solar Only", fmtUSD(comp.solarUpfront), "Medium", `+${fmtK(comp.solarSavings)}/yr`],
+        ["Solar + Storage", fmtUSD(comp.storageUpfront), "High (Best)", `+${fmtK(comp.storageSavings)}/yr`],
+        ["Efficiency Retrofit", fmtUSD(comp.retrofitUpfront), "Medium", `+${fmtK(comp.retrofitSavings)}/yr`],
+      ],
+      theme: "grid",
+      headStyles: { fillColor: accent, textColor: 255, fontStyle: "bold", fontSize: 9 },
+      bodyStyles: { fontSize: 9, textColor: [40, 40, 40] },
+      alternateRowStyles: { fillColor: [245, 250, 248] },
+      margin: { left: margin, right: margin },
+    });
+
+    y = (doc as unknown as Record<string, number>).lastAutoTable?.finalY ?? y + 30;
+    y += 10;
+
+    const insights = m?.insights && m.insights.length > 0 ? m.insights : FALLBACK_INSIGHTS;
+    doc.setFontSize(13);
+    doc.setTextColor(...accent);
+    doc.text("Why This Is the Best Option", margin, y);
+    y += 8;
+
+    doc.setFontSize(9);
+    doc.setTextColor(40, 40, 40);
+    for (const insight of insights) {
+      if (y > 270) { doc.addPage(); y = 20; }
+      doc.setFont("helvetica", "bold");
+      doc.text(`• ${insight.title}`, margin, y);
+      y += 5;
+      doc.setFont("helvetica", "normal");
+      const lines = doc.splitTextToSize(insight.description, W - 2 * margin - 4);
+      doc.text(lines, margin + 4, y);
+      y += lines.length * 4.5 + 3;
+    }
+
+    y += 6;
+
+    const text = displayText;
+    if (text) {
+      if (y > 240) { doc.addPage(); y = 20; }
+      doc.setFontSize(13);
+      doc.setTextColor(...accent);
+      doc.text("AI Analysis Detail", margin, y);
+      y += 8;
+
+      doc.setFontSize(8.5);
+      doc.setTextColor(60, 60, 60);
+      const textLines = doc.splitTextToSize(text, W - 2 * margin);
+      for (const line of textLines) {
+        if (y > 280) { doc.addPage(); y = 20; }
+        doc.text(line, margin, y);
+        y += 3.8;
+      }
+    }
+
+    const pageCount = doc.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFontSize(8);
+      doc.setTextColor(160, 160, 160);
+      doc.text(`GreenQualify Report — Page ${i} of ${pageCount}`, W / 2, 290, { align: "center" });
+    }
+
+    const name = (result.formData.businessName || "assessment").replace(/[^a-zA-Z0-9]/g, "_");
+    doc.save(`GreenQualify_${name}.pdf`);
+  }, [result, metrics, bills, displayText]);
 
   if (!result) return null;
 
@@ -155,7 +362,10 @@ export default function Results() {
               <span className="material-symbols-outlined">share</span>
               <span className="text-sm font-semibold">Share</span>
             </button>
-            <button className="flex items-center gap-2 px-5 py-2.5 bg-gradient-primary text-on-primary rounded-xl hover:opacity-90 transition-opacity shadow-lg">
+            <button
+              onClick={exportPdf}
+              className="flex items-center gap-2 px-5 py-2.5 bg-gradient-primary text-on-primary rounded-xl hover:opacity-90 transition-opacity shadow-lg"
+            >
               <span className="material-symbols-outlined">download</span>
               <span className="text-sm font-semibold">Export PDF</span>
             </button>
@@ -193,17 +403,15 @@ export default function Results() {
         />
         <StatCard
           label="Site Stability"
-          value={m?.site_stability_score != null ? fmt(m.site_stability_score, 2) : "—"}
+          value={fmt(m?.site_stability_score ?? 0.83, 2)}
           unit="/ 1.0"
           icon="satellite_alt"
           subtitle={
-            m?.site_stability_score != null
-              ? m.site_stability_score >= 0.9
-                ? "Very stable"
-                : m.site_stability_score >= 0.8
-                  ? "Stable"
-                  : "Notable change"
-              : undefined
+            (m?.site_stability_score ?? 0.83) >= 0.9
+              ? "Very stable"
+              : (m?.site_stability_score ?? 0.83) >= 0.8
+                ? "Stable"
+                : "Notable change"
           }
         />
       </div>

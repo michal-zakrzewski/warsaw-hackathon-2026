@@ -55,7 +55,7 @@ export default function CaseStudy() {
           </div>
           <div className="space-y-6 flex-grow">
             <div className="p-6 bg-white rounded-xl shadow-md border-l-4 border-primary">
-              <p className="text-sm font-bold text-primary uppercase tracking-wider mb-2">Concierge Outcome</p>
+              <p className="text-sm font-bold text-primary uppercase tracking-wider mb-2">GreenQualify Outcome</p>
               <p className="text-lg font-bold text-on-surface">Precision Recommendation</p>
               <p className="text-sm text-on-surface-variant mt-2">
                 Identified specific USDA REAP Grant & Green Tech Credit eligibility within 15 minutes.

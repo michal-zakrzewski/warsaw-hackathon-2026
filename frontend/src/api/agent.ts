@@ -8,9 +8,17 @@ export async function createSession(userId: string, sessionId: string): Promise<
   });
 }
 
+export interface FunctionResponse {
+  name?: string;
+  response?: Record<string, unknown>;
+}
+
 export interface AgentEvent {
   content?: {
-    parts?: Array<{ text?: string }>;
+    parts?: Array<{
+      text?: string;
+      functionResponse?: FunctionResponse;
+    }>;
     role?: string;
   };
   author?: string;
@@ -51,4 +59,19 @@ export function extractAgentText(events: AgentEvent[]): string {
     }
   }
   return parts.join("\n");
+}
+
+export function extractToolResponses(events: AgentEvent[]): Record<string, Record<string, unknown>> {
+  const tools: Record<string, Record<string, unknown>> = {};
+  for (const evt of events) {
+    if (evt.content?.parts) {
+      for (const p of evt.content.parts) {
+        const fr = p.functionResponse;
+        if (fr?.name && fr.response && !fr.response.error) {
+          tools[fr.name] = fr.response;
+        }
+      }
+    }
+  }
+  return tools;
 }

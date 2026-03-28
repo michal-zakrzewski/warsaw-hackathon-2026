@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { createSession, runAgent, extractAgentText, type MessagePart } from "../api/agent";
+import { createSession, runAgent, extractAgentText, extractToolResponses, type MessagePart } from "../api/agent";
 import type { IntakeFormData } from "../types";
 
 const STATUS_STEPS = [
@@ -103,7 +103,8 @@ export default function AnalysisLoading() {
         await createSession(userId, sessionId);
         const events = await runAgent(userId, sessionId, parts);
         const text = extractAgentText(events);
-        sessionStorage.setItem("result", JSON.stringify({ agentText: text, formData: form, voiceContext }));
+        const toolResponses = extractToolResponses(events);
+        sessionStorage.setItem("result", JSON.stringify({ agentText: text, formData: form, voiceContext, toolResponses }));
         setProgress(100);
         clearInterval(stepInterval);
         setTimeout(() => navigate("/results"), 600);
@@ -128,7 +129,7 @@ export default function AnalysisLoading() {
     <>
       <header className="fixed top-0 w-full z-50 bg-white/40 backdrop-blur-md">
         <div className="flex justify-between items-center px-8 py-6 max-w-7xl mx-auto">
-          <div className="text-2xl font-extrabold tracking-tighter text-emerald-900">Concierge</div>
+          <div className="text-2xl font-extrabold tracking-tighter text-emerald-900">GreenQualify</div>
           <div className="flex items-center gap-2">
             <span className="text-xs font-semibold uppercase tracking-widest text-on-surface-variant/60">Secure Session</span>
             <span className="material-symbols-outlined text-emerald-700 text-sm fill-icon">lock</span>

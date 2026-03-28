@@ -16,11 +16,17 @@ _MISSING_PROJECT = (
 
 
 def init(project: str | None = None) -> None:
-    """Initialize Earth Engine. Call once per process after ``ee.Authenticate()``."""
+    """Initialize Earth Engine using service-account credentials when available."""
     resolved = project or os.environ.get("EARTH_ENGINE_PROJECT")
     if not resolved or not resolved.strip():
         raise ValueError(_MISSING_PROJECT)
-    ee.Initialize(project=resolved.strip())
+
+    sa_path = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS")
+    if sa_path and os.path.isfile(sa_path):
+        credentials = ee.ServiceAccountCredentials(None, sa_path)
+        ee.Initialize(credentials=credentials, project=resolved.strip())
+    else:
+        ee.Initialize(project=resolved.strip())
 
 
 def embedding_image(year: int) -> ee.Image:

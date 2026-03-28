@@ -5,7 +5,7 @@ export default function Navbar() {
     <nav className="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-md shadow-sm">
       <div className="flex justify-between items-center px-8 py-4 max-w-7xl mx-auto">
         <Link to="/" className="text-2xl font-bold tracking-tighter text-emerald-900">
-          Concierge
+          GreenQualify
         </Link>
         <div className="hidden md:flex items-center gap-8">
           <Link
