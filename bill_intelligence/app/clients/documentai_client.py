@@ -155,15 +155,17 @@ class GoogleDocumentAIClient:
     def _build_document_source(self, document: BillDocumentInput):
         from google.cloud import documentai  # type: ignore[import]
 
+        if document.source_type == "local_file":
+            raise ValueError(
+                "local_file source type is disabled for security — use base64 instead"
+            )
+
         if document.source_type == "gcs_uri" and document.gcs_uri:
             return None, documentai.GcsDocument(
                 gcs_uri=document.gcs_uri, mime_type=document.mime_type
             )
 
-        if document.source_type == "local_file" and document.file_path:
-            with open(document.file_path, "rb") as f:
-                content = f.read()
-        elif document.source_type == "base64" and document.base64_content:
+        if document.source_type == "base64" and document.base64_content:
             content = base64.b64decode(document.base64_content)
         else:
             raise ValueError(

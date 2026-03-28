@@ -6,6 +6,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from google import genai
 from pydantic import BaseModel
 
@@ -23,7 +24,7 @@ app = FastAPI(title="Voice Interview API")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["http://localhost:5173", "http://localhost:3000"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -165,7 +166,10 @@ class ExtractPayload(BaseModel):
 @app.post("/voice/extract")
 def extract_from_transcript(payload: ExtractPayload):
     if not gemini_client:
-        return {"error": "GOOGLE_API_KEY not configured"}, 500
+        return JSONResponse(
+            status_code=500,
+            content={"error": "GOOGLE_API_KEY not configured"},
+        )
 
     conversation = "\n".join(
         f"{msg.role.upper()}: {msg.content}" for msg in payload.messages if msg.content
@@ -191,6 +195,9 @@ def extract_from_transcript(payload: ExtractPayload):
     try:
         extracted = json.loads(raw)
     except json.JSONDecodeError:
-        return {"error": "Failed to parse extraction result", "raw": raw}
+        return JSONResponse(
+            status_code=422,
+            content={"error": "Failed to parse extraction result"},
+        )
 
     return {"extracted": extracted}
