@@ -77,17 +77,40 @@ function StatCard({
   );
 }
 
+function fmtK(n: number) { return "$" + (n / 1000).toFixed(1) + "k"; }
+function fmtUSD(n: number) { return "$" + n.toLocaleString("en-US"); }
+
+function calcComparison(annualKwh: number, importRate: number) {
+  const systemKw = annualKwh / 1400;
+  const solarUpfront = Math.round(systemKw * 2450 / 1000) * 1000;
+  const solarSavings = annualKwh * importRate * 0.72;
+  const storageUpfront = Math.round(solarUpfront * 1.55 / 1000) * 1000;
+  const storageSavings = solarSavings * 1.52;
+  const retrofitUpfront = Math.round(solarUpfront * 0.47 / 1000) * 1000;
+  const retrofitSavings = solarSavings * 0.40;
+  const paybackYears = storageUpfront / storageSavings;
+  const co2Tons = Math.round(annualKwh * 0.000386 * 0.72);
+  return { solarUpfront, solarSavings, storageUpfront, storageSavings, retrofitUpfront, retrofitSavings, paybackYears, co2Tons };
+}
+
 export default function Results() {
   const navigate = useNavigate();
   const [result, setResult] = useState<AnalysisResult | null>(null);
+  const [bills, setBills] = useState<{ annual_electricity_kwh: number; annual_bill_cost: number; electricity_import_rate_per_kwh: number } | null>(null);
 
   useEffect(() => {
     const raw = sessionStorage.getItem("result");
-    if (!raw) {
-      navigate("/intake");
-      return;
-    }
+    if (!raw) { navigate("/intake"); return; }
     setResult(JSON.parse(raw));
+    const billRaw = sessionStorage.getItem("billIntelligence");
+    if (billRaw) {
+      try {
+        const di = JSON.parse(billRaw).derived_inputs;
+        if (di?.annual_electricity_kwh && di?.electricity_import_rate_per_kwh) {
+          setBills({ annual_electricity_kwh: di.annual_electricity_kwh, annual_bill_cost: di.annual_bill_cost, electricity_import_rate_per_kwh: di.electricity_import_rate_per_kwh });
+        }
+      } catch {}
+    }
   }, [navigate]);
 
   const metrics = useMemo(
@@ -103,6 +126,9 @@ export default function Results() {
   if (!result) return null;
 
   const m = metrics;
+  const annualKwh = bills?.annual_electricity_kwh ?? 95000;
+  const importRate = bills?.electricity_import_rate_per_kwh ?? 0.147;
+  const comp = calcComparison(annualKwh, importRate);
 
   return (
     <main className="pt-24 pb-20 px-4 md:px-12 max-w-7xl mx-auto">
@@ -138,7 +164,8 @@ export default function Results() {
       </div>
 
       {/* Key Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+      {/* Agent-derived stats */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
         <StatCard
           label="Heat Loss"
           value={m?.heat_loss_kw != null ? fmt(m.heat_loss_kw) : "—"}
@@ -178,6 +205,30 @@ export default function Results() {
                   : "Notable change"
               : undefined
           }
+        />
+      </div>
+
+      {/* Bill-computed financial stats */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+        <StatCard
+          label="Estimated Payback"
+          value={comp.paybackYears.toFixed(1)}
+          unit="years"
+          icon="calendar_today"
+        />
+        <StatCard
+          label="Annual Savings"
+          value={fmtK(comp.storageSavings)}
+          unit="/yr"
+          icon="payments"
+          subtitle={`+${Math.round(comp.storageSavings / (annualKwh * importRate) * 100)}% vs baseline`}
+        />
+        <StatCard
+          label="CO2 Reduction"
+          value={String(comp.co2Tons)}
+          unit="tons"
+          icon="eco"
+          subtitle={`≈ ${Math.round(comp.co2Tons * 23)} trees planted`}
         />
       </div>
 
@@ -372,11 +423,11 @@ export default function Results() {
                     <span className="font-bold">Solar Only</span>
                   </div>
                 </td>
-                <td className="px-8 py-6 font-medium text-on-surface-variant">$245,000</td>
+                <td className="px-8 py-6 font-medium text-on-surface-variant">{fmtUSD(comp.solarUpfront)}</td>
                 <td className="px-8 py-6">
                   <span className="px-3 py-1 bg-surface-container text-on-surface-variant rounded-full text-xs font-bold">Medium</span>
                 </td>
-                <td className="px-8 py-6 font-bold text-primary">+$8.2k/yr</td>
+                <td className="px-8 py-6 font-bold text-primary">+{fmtK(comp.solarSavings)}/yr</td>
               </tr>
               <tr className="bg-primary/5">
                 <td className="px-8 py-6">
@@ -385,11 +436,11 @@ export default function Results() {
                     <span className="font-bold">Solar + Storage</span>
                   </div>
                 </td>
-                <td className="px-8 py-6 font-medium text-on-surface-variant">$380,000</td>
+                <td className="px-8 py-6 font-medium text-on-surface-variant">{fmtUSD(comp.storageUpfront)}</td>
                 <td className="px-8 py-6">
                   <span className="px-3 py-1 bg-primary text-on-primary rounded-full text-xs font-bold">High (Best)</span>
                 </td>
-                <td className="px-8 py-6 font-bold text-primary">+$12.4k/yr</td>
+                <td className="px-8 py-6 font-bold text-primary">+{fmtK(comp.storageSavings)}/yr</td>
               </tr>
               <tr className="hover:bg-primary/5 transition-colors">
                 <td className="px-8 py-6">
@@ -398,11 +449,11 @@ export default function Results() {
                     <span className="font-bold">Efficiency Retrofit</span>
                   </div>
                 </td>
-                <td className="px-8 py-6 font-medium text-on-surface-variant">$115,000</td>
+                <td className="px-8 py-6 font-medium text-on-surface-variant">{fmtUSD(comp.retrofitUpfront)}</td>
                 <td className="px-8 py-6">
                   <span className="px-3 py-1 bg-surface-container text-on-surface-variant rounded-full text-xs font-bold">Medium</span>
                 </td>
-                <td className="px-8 py-6 font-bold text-primary">+$4.1k/yr</td>
+                <td className="px-8 py-6 font-bold text-primary">+{fmtK(comp.retrofitSavings)}/yr</td>
               </tr>
             </tbody>
           </table>
