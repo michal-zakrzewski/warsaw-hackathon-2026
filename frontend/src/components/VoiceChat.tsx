@@ -147,11 +147,15 @@ export default function VoiceChat({ onExtracted }: VoiceChatProps) {
 
       vapi.on("error", (err: Record<string, unknown>) => {
         console.error("Vapi error:", err);
-        const msg =
-          (err?.message as string) ||
-          (err?.error as Record<string, unknown>)?.message ||
-          JSON.stringify(err);
-        setError(msg as string);
+        let msg = "An unknown error occurred";
+        if (typeof err?.message === "string") {
+          msg = err.message;
+        } else if (typeof (err?.error as Record<string, unknown>)?.message === "string") {
+          msg = (err.error as Record<string, unknown>).message as string;
+        } else {
+          msg = JSON.stringify(err);
+        }
+        setError(msg);
         setStatus("error");
       });
 
