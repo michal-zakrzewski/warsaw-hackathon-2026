@@ -1,4 +1,4 @@
-import { useRef, useState, useCallback } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { processBills } from "../api/bills";
 import type { IntakeFormData, VoiceExtractedData } from "../types";
@@ -75,10 +75,16 @@ function Sidebar({ current }: { current: number }) {
 }
 
 
+const SESSION_KEYS = ["intake", "result", "billIntelligence", "voiceContext", "buildingImage"] as const;
+
 export default function IntakeForm() {
   const navigate = useNavigate();
   const [step, setStep] = useState(0);
   const [billFiles, setBillFiles] = useState<File[]>([]);
+
+  useEffect(() => {
+    SESSION_KEYS.forEach((k) => sessionStorage.removeItem(k));
+  }, []);
   const [billsProcessing, setBillsProcessing] = useState(false);
   const [billsError, setBillsError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -131,18 +137,41 @@ export default function IntakeForm() {
     (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
       setForm((prev) => ({ ...prev, [field]: e.target.value }));
 
+  const MAX_IMAGE_MB = 10;
+  const MAX_BILL_MB = 15;
+  const MAX_BILL_FILES = 12;
+
+  const validateFileSize = (file: File, maxMB: number): boolean => {
+    if (file.size > maxMB * 1024 * 1024) {
+      setBillsError(`File "${file.name}" exceeds ${maxMB} MB limit`);
+      return false;
+    }
+    return true;
+  };
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) setBillFiles(Array.from(e.target.files));
+    if (!e.target.files) return;
+    const files = Array.from(e.target.files).slice(0, MAX_BILL_FILES);
+    if (files.every((f) => validateFileSize(f, MAX_BILL_MB))) {
+      setBillsError(null);
+      setBillFiles(files);
+    }
   };
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
-    if (e.dataTransfer.files) setBillFiles(Array.from(e.dataTransfer.files));
+    if (!e.dataTransfer.files) return;
+    const files = Array.from(e.dataTransfer.files).slice(0, MAX_BILL_FILES);
+    if (files.every((f) => validateFileSize(f, MAX_BILL_MB))) {
+      setBillsError(null);
+      setBillFiles(files);
+    }
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (!validateFileSize(file, MAX_IMAGE_MB)) return;
     const reader = new FileReader();
     reader.onload = () => {
       const dataUrl = reader.result as string;

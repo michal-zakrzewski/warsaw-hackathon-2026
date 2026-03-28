@@ -1,79 +1,266 @@
-# warsaw-hackathon-2026
+<p align="center">
+  <img src="demo/embedding_timelapse.gif" alt="AlphaEarth Satellite Embeddings — temporal visualization" width="420" />
+</p>
 
-Short idea description
-GreenCredit Copilot is a multimodal AI assistant for farmers that helps them discover the best green investment to make, estimate ROI and carbon/energy impact, and identify which green loan or grant they are most likely to qualify for. Instead of making farmers search through financing programs and technical requirements manually, the system collects business information through voice and uploaded media, analyzes the opportunity, and returns a clear recommendation with application-ready guidance.
-This fits the hackathon theme well because it is built as a multimodal agent system using voice, text, images/documents, and tool-based reasoning on the Google stack, with Vapi as the conversational layer.  
-⸻
-Demo workflow
-1. Voice intake
-The farmer starts by talking to the assistant through Vapi.
-The assistant asks simple questions like:
-• where is your farm located,
-• what is your current energy usage,
-• what equipment or buildings do you have,
-• what is your goal: lower bills, energy independence, grant, or loan.
-This creates a natural onboarding flow instead of a long form.
-2. Multimodal input
-The user then uploads:
-• farm address,
-• a photo or short video,
-• optionally an electricity bill or short PDF.
-3. Agent analysis
-The system processes all inputs and evaluates a few possible initiatives, for example:
-• solar panels,
-• battery storage,
-• insulation / efficiency upgrade.
-It then estimates:
-• expected savings,
-• ROI / payback period,
-• carbon reduction,
-• likely matching financing programs.
-4. Decision output
-The platform shows:
-• the best project,
-• the best financing option,
-• projected ROI,
-• required documents / missing info,
-• explanation of why this is the recommended path.
-5. Wow moment
-The assistant can also show a “before vs after” recommendation:
-“Right now you do not meet the threshold for Program B.
-If you install a 20 kW solar system, your projected savings and emissions reduction improve enough to make this a better-fit application.”
-⸻
-How multimodal agents work behind the scenes
-1. Intake Agent
-Handles the voice conversation through Vapi.
-Its job is to collect structured business and farm information from natural speech.
-2. Document & Media Agent
-Takes uploaded images, videos, and bills/PDFs and extracts useful signals:
-• farm/building type,
-• possible roof or equipment context,
-• utility data,
-• missing fields.
-3. Simulation Agent
-Runs deterministic calculations for:
-• solar generation,
-• energy savings,
-• ROI,
-• carbon reduction.
-This should be code-based, not LLM-based.
-4. Financing Agent
-Matches the farm/project profile against a small set of green financing programs and checks basic eligibility logic.
-5. Strategy Agent
-Combines everything and answers the key question:
-“What should this farmer do next to maximize value and improve qualification chances?”
-This is the main “agentic” layer because it reasons across multiple inputs, tools, and outputs rather than just answering one prompt.
-⸻
-Why multimodal agents are useful here
-A normal chatbot would just give generic advice.
-A multimodal agent can:
-• talk to the user naturally,
-• read uploaded files,
-• understand photos/documents,
-• run calculations,
-• compare options,
-• produce a concrete recommendation.
-So the value is not just conversation — it is decision-making from mixed real-world inputs.
-⸻
-Very short pitch version
-GreenCredit Copilot is a multimodal AI agent for farmers that interviews users by voice, analyzes farm data from media and documents, estimates ROI for green upgrades, and recommends the financing option they are most likely to qualify for.
+<h1 align="center">GreenQualify</h1>
+
+<p align="center">
+  <strong>Multimodal AI agent for green finance — from a photo and a conversation to a financing recommendation.</strong>
+</p>
+
+<p align="center">
+  <code>Gemini 2.5 Flash</code> &nbsp;&middot;&nbsp;
+  <code>Google ADK</code> &nbsp;&middot;&nbsp;
+  <code>AlphaEarth Foundations</code> &nbsp;&middot;&nbsp;
+  <code>Google Solar API</code> &nbsp;&middot;&nbsp;
+  <code>Document AI</code> &nbsp;&middot;&nbsp;
+  <code>Vapi Voice</code>
+</p>
+
+---
+
+## The Problem
+
+Small and medium businesses want to go green but face a maze of financing programs, technical assessments, and eligibility requirements. Getting a single answer — *"What should I do, and how do I pay for it?"* — currently requires an energy auditor, a financial advisor, and weeks of paperwork.
+
+## The Solution
+
+GreenQualify is a **multimodal AI agent** that interviews the user by voice, analyzes their building from a photograph, pulls real satellite and solar data, runs physics-based energy calculations, and returns a clear financing recommendation — all in under 60 seconds.
+
+---
+
+## How It Works
+
+```
+  Voice Interview          Photo Upload           Address + Coords
+       |                       |                        |
+       v                       v                        v
+  +---------+          +---------------+         +-------------+
+  |  Vapi   |          | Gemini Vision |         | Earth Engine |
+  | WebRTC  |          | wall material |         |  AlphaEarth |
+  |  + STT  |          |  windows, roof|         |  embeddings |
+  |  + TTS  |          |  cracks, etc. |         |  stability  |
+  +---------+          +---------------+         +-------------+
+       |                       |                        |
+       +----------+------------+------------+-----------+
+                  |                         |
+                  v                         v
+        +------------------+      +------------------+
+        |  Heat Loss Engine|      |  Google Solar API |
+        |  EN ISO 6946     |      |  rooftop panels   |
+        |  EN 12831        |      |  financial data   |
+        +------------------+      +------------------+
+                  |                         |
+                  +------------+------------+
+                               |
+                               v
+                  +-------------------------+
+                  |    Gemini 2.5 Flash      |
+                  |    (Google ADK Agent)     |
+                  |                          |
+                  |  Combines all signals    |
+                  |  into a financing        |
+                  |  recommendation with     |
+                  |  payback, savings, CO2   |
+                  +-------------------------+
+                               |
+                               v
+                    Beautiful React Dashboard
+```
+
+---
+
+## Google Services Used
+
+| Service | What It Does |
+|---------|-------------|
+| **Gemini 2.5 Flash** | Multimodal reasoning — analyzes building photos, generates recommendations, extracts voice data |
+| **Google ADK** | Agent orchestration with tool use — coordinates all API calls in a single reasoning loop |
+| **AlphaEarth Foundations** | 64-dimensional satellite embeddings via Earth Engine — measures land-use stability over 7 years |
+| **Google Solar API** | Real rooftop solar potential — panel count, energy output, financial analysis |
+| **Google Cloud Document AI** | Utility bill parsing — extracts consumption, tariff rates, costs from PDF/image scans |
+| **Vapi** | Voice AI platform — real-time conversational interviews via WebRTC |
+
+---
+
+## Key Features
+
+**Voice-First Onboarding** — Talk to the AI advisor instead of filling forms. It asks smart follow-up questions and auto-fills the intake form from the conversation.
+
+**Photo-to-Heat-Loss Pipeline** — Upload a building photo. Gemini identifies wall materials, windows, roof type, insulation signs, cracks, and degradation. These observations feed a deterministic physics engine (EN ISO 6946 / EN 12831) that estimates transmission and infiltration heat loss.
+
+**Satellite Stability Analysis** — AlphaEarth Foundations embeddings quantify how stable the site's land-use context has been from 2017–2023. A score near 1.0 means low environmental risk for long-term investment.
+
+**Real Solar Data** — Google Solar API provides actual rooftop geometry, panel capacity, energy output estimates, and financial analysis including federal incentives.
+
+**Bill Intelligence** — Upload utility bills (PDF or photo) and Document AI extracts consumption patterns, tariff rates, and annual costs to calibrate the financial model.
+
+**Dynamic Results Dashboard** — Stat cards, energy profiles, and "why this is the best option" insights are all generated dynamically from the agent's structured output — not hardcoded.
+
+---
+
+## Quick Start
+
+### Prerequisites
+
+- Python 3.12+, [uv](https://docs.astral.sh/uv/), Node.js 20+
+- Google Cloud project with Earth Engine, Solar API, and Document AI enabled
+- API keys for Gemini, Solar, and optionally Vapi
+
+### 1. Clone and install
+
+```bash
+git clone https://github.com/michal-zakrzewski/warsaw-hackathon-2026.git
+cd warsaw-hackathon-2026
+uv sync
+cd frontend && npm install && cd ..
+```
+
+### 2. Configure environment
+
+```bash
+cp .env.example .env
+cp .env.example green_agent/.env
+# Fill in your API keys in both files
+```
+
+| Variable | Required | Service |
+|----------|----------|---------|
+| `GOOGLE_API_KEY` | Yes | Gemini |
+| `EARTH_ENGINE_PROJECT` | Yes | Earth Engine |
+| `GOOGLE_SOLAR_API_KEY` | Yes | Solar API |
+| `VAPI_PUBLIC_KEY` | Optional | Voice assistant |
+| `GOOGLE_CLOUD_PROJECT` | Optional | Document AI |
+
+### 3. Authenticate Earth Engine (first time only)
+
+```bash
+uv run earthengine authenticate
+```
+
+### 4. Start all services
+
+**Option A — Docker (recommended)**
+
+```bash
+# Set the SA key path to the container path
+sed -i '' 's|GOOGLE_APPLICATION_CREDENTIALS=.*|GOOGLE_APPLICATION_CREDENTIALS=/app/service-account.json|' .env
+
+docker compose up --build
+```
+
+Open **http://localhost:3000** and click **Start**.
+
+**Option B — Local (4 terminals)**
+
+```bash
+# Terminal 1 — ADK Agent (port 8000)
+uv run adk api_server . --port 8000
+
+# Terminal 2 — Voice Server (port 8001)
+uv run uvicorn voice_server:app --port 8001 --reload
+
+# Terminal 3 — Bill Intelligence (port 8002)
+uv run uvicorn bill_intelligence.main:app --port 8002 --reload
+
+# Terminal 4 — Frontend (port 5173)
+cd frontend && npm run dev
+```
+
+Open **http://localhost:5173** and click **Start**.
+
+> **Note:** Always use `uv run uvicorn ...` (not bare `uvicorn`) — the project requires Python 3.12 and `uv` ensures the correct interpreter is used.
+
+---
+
+## Project Structure
+
+```
+warsaw-hackathon-2026/
+├── green_agent/               # ADK agent — Gemini + tool orchestration
+│   ├── agent.py               #   Agent definition + system instructions
+│   ├── tools.py               #   Satellite, solar, heat-loss tool wrappers
+│   └── heat_loss_tools.py     #   Deterministic physics engine (EN ISO 6946)
+├── src/satellite_embedding/   # Earth Engine connector for AlphaEarth
+├── solar_client/              # Google Solar API client
+├── bill_intelligence/         # Document AI bill parsing pipeline
+├── voice_server.py            # Vapi voice interview backend
+├── frontend/                  # React + Vite + Tailwind SPA
+│   ├── src/pages/
+│   │   ├── IntakeForm.tsx     #   Voice + photo + bills intake wizard
+│   │   ├── AnalysisLoading.tsx#   Multimodal prompt builder
+│   │   └── Results.tsx        #   Dynamic results dashboard
+│   └── src/components/
+│       └── VoiceChat.tsx      #   Vapi WebRTC voice panel
+├── scripts/
+│   └── generate_embedding_gif.py  # AlphaEarth temporal GIF generator
+├── demo/
+│   ├── demo_factory.png       # Test photo for Warsaw scenario
+│   └── embedding_timelapse.gif# AlphaEarth visualization
+├── DEMO_SCENARIOS.md          # Two pre-tested demo walkthroughs
+└── README_VOICE.md            # Voice subsystem documentation
+```
+
+---
+
+## Demo Scenarios
+
+See **[DEMO_SCENARIOS.md](DEMO_SCENARIOS.md)** for two pre-tested walkthroughs:
+
+| Scenario | Location | Features Showcased |
+|----------|----------|--------------------|
+| **US Farm** | Mountain View, CA | Solar API + Satellite stability + USDA grants |
+| **Warsaw Factory** | ul. Annopol 4, Warsaw | Photo vision + Heat loss + Solar + Satellite |
+
+**The wow moment:** Upload a photo of a building and enter the floor area. The AI examines the facade, identifies glass curtain walls, counts floors, and runs a physics-based heat-loss calculation — all from a single image and one number.
+
+---
+
+## AlphaEarth Satellite Embeddings
+
+<p align="center">
+  <img src="demo/embedding_timelapse.gif" alt="Satellite embedding temporal visualization" width="480" />
+  <br />
+  <em>RGB visualization of 3 embedding dimensions (A05, A15, A30) across 2017–2023.<br/>
+  Stable colors = stable land use = lower investment risk.</em>
+</p>
+
+The [Satellite Embedding dataset](https://developers.google.com/earth-engine/datasets/catalog/GOOGLE_SATELLITE_EMBEDDING_V1_ANNUAL) from Google DeepMind's AlphaEarth Foundations provides 64-dimensional embedding vectors at 10m resolution for every terrestrial point on Earth. We use it to assess whether a site's environmental context has been stable over time — a key signal for long-term green investment viability.
+
+Generate your own visualization:
+
+```bash
+uv run python scripts/generate_embedding_gif.py <lat> <lon> [output.gif]
+```
+
+---
+
+## Security
+
+This project implements several security hardening measures:
+
+- CORS restricted to localhost origins on all backend services
+- Path traversal protection — `local_file` document source type is disabled
+- Proper HTTP error responses (no information leakage)
+- File upload size limits (10 MB images, 15 MB bills)
+- Session storage cleanup between analyses
+- Safe JSON parsing with graceful fallbacks
+- No hardcoded secrets — all credentials via environment variables
+- `.gitignore` covers `.env`, `.adk/`, `transcripts/`, service account keys
+
+---
+
+## Team
+
+Built at the **Warsaw Google Hackathon 2026** by:
+
+- [Michal Zakrzewski](https://github.com/michal-zakrzewski)
+- [Paweł Knap](https://github.com/pabloknappo)
+- [Mykola Vysotskyi](https://github.com/mvysotskyi)
+- [Taras Rumezhak](https://github.com/tarasrumezhak)
+
+---
+
+<p align="center">
+  <sub>Built with Google Cloud, Google DeepMind AlphaEarth Foundations, and a lot of coffee.</sub>
+</p>

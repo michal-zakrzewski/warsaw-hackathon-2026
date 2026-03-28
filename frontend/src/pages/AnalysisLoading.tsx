@@ -27,7 +27,13 @@ export default function AnalysisLoading() {
       return;
     }
 
-    const form: IntakeFormData = JSON.parse(raw);
+    let form: IntakeFormData;
+    try {
+      form = JSON.parse(raw);
+    } catch {
+      navigate("/intake");
+      return;
+    }
     const voiceContext = sessionStorage.getItem("voiceContext");
 
     const userId = `user_${Date.now()}`;
@@ -87,8 +93,12 @@ export default function AnalysisLoading() {
     const parts: MessagePart[] = [{ text: promptText }];
 
     if (hasImage) {
-      const { base64, mimeType } = JSON.parse(imageRaw);
-      parts.push({ inline_data: { mime_type: mimeType, data: base64 } });
+      try {
+        const { base64, mimeType } = JSON.parse(imageRaw);
+        parts.push({ inline_data: { mime_type: mimeType, data: base64 } });
+      } catch {
+        /* corrupt image data — proceed without photo */
+      }
     }
 
     sessionStorage.removeItem("buildingImage");

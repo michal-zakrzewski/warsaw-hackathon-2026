@@ -160,7 +160,12 @@ export default function Results() {
   useEffect(() => {
     const raw = sessionStorage.getItem("result");
     if (!raw) { navigate("/intake"); return; }
-    setResult(JSON.parse(raw));
+    try {
+      setResult(JSON.parse(raw));
+    } catch {
+      navigate("/intake");
+      return;
+    }
     const billRaw = sessionStorage.getItem("billIntelligence");
     if (billRaw) {
       try {
