@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import base64
 import json
 import re
 from typing import Protocol, runtime_checkable
@@ -92,22 +91,21 @@ def _fake_missing(view_type: str) -> list[str]:
 
 
 class GeminiVisionModelClient:
-    """Real Gemini vision backend using google-generativeai.
+    """Real Gemini vision backend using google-genai SDK.
 
     Loads the image from URL or local file, sends it with the pre-built prompt,
     and parses the JSON response into a PerImageVisionResult.
     """
 
-    def __init__(self, api_key: str, model: str = "gemini-2.0-flash") -> None:
-        import google.generativeai as genai  # type: ignore[import]
-
-        genai.configure(api_key=api_key)
-        self._model = genai.GenerativeModel(model)
+    def __init__(self, api_key: str, model: str = "gemini-2.5-flash") -> None:
+        self._api_key = api_key
+        self._model_name = model
 
     def analyze_image(self, image: ImageInput, prompt: str) -> PerImageVisionResult:
-        import google.generativeai as genai  # type: ignore[import]
+        from google import genai  # type: ignore[import]
+        from google.genai import types  # type: ignore[import]
 
-        parts: list = [prompt]
+        client = genai.Client(api_key=self._api_key)
 
         if image.source_type == "url" and image.image_url:
             import urllib.request
@@ -115,14 +113,18 @@ class GeminiVisionModelClient:
             with urllib.request.urlopen(image.image_url) as resp:
                 raw = resp.read()
             mime = image.mime_type or "image/jpeg"
-            parts.append({"mime_type": mime, "data": base64.b64encode(raw).decode()})
         elif image.source_type == "upload" and image.storage_path:
             with open(image.storage_path, "rb") as f:
                 raw = f.read()
             mime = image.mime_type or "image/jpeg"
-            parts.append({"mime_type": mime, "data": base64.b64encode(raw).decode()})
+        else:
+            return _unknown_result(image.image_id)
 
-        response = self._model.generate_content(parts)
+        image_part = types.Part.from_bytes(data=raw, mime_type=mime)
+        response = client.models.generate_content(
+            model=self._model_name,
+            contents=[prompt, image_part],
+        )
         return _parse_gemini_response(image.image_id, response.text)
 
 
