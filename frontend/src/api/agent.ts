@@ -25,12 +25,15 @@ export async function runAgent(
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      appName: "green_agent",
-      userId,
-      sessionId,
-      newMessage: { role: "user", parts: [{ text: message }] },
+      app_name: "green_agent",
+      user_id: userId,
+      session_id: sessionId,
+      new_message: { role: "user", parts: [{ text: message }] },
     }),
   });
+  if (!res.ok) {
+    throw new Error(`Agent API error: ${res.status} ${res.statusText}`);
+  }
   return res.json();
 }
 

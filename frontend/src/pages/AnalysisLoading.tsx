@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { createSession, runAgent, extractAgentText } from "../api/agent";
 import type { IntakeFormData } from "../types";
@@ -15,8 +15,12 @@ export default function AnalysisLoading() {
   const navigate = useNavigate();
   const [activeStep, setActiveStep] = useState(0);
   const [progress, setProgress] = useState(10);
+  const started = useRef(false);
 
   useEffect(() => {
+    if (started.current) return;
+    started.current = true;
+
     const raw = sessionStorage.getItem("intake");
     if (!raw) {
       navigate("/intake");
