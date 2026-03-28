@@ -6,6 +6,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY voice_server.py .
+COPY questions.json .
 COPY green_agent/ green_agent/
 COPY solar_client/ solar_client/
 COPY src/ src/

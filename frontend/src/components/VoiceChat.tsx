@@ -33,7 +33,7 @@ export default function VoiceChat({ onExtracted }: VoiceChatProps) {
   const [error, setError] = useState<string | null>(null);
   const [extracting, setExtracting] = useState(false);
 
-  const vapiRef = useRef<Vapi | null>(null);
+  const vapiRef = useRef<InstanceType<typeof VapiModule> | null>(null);
   const configRef = useRef<VoiceConfig | null>(null);
   const transcriptRef = useRef<TranscriptMessage[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);

@@ -2,7 +2,7 @@
   <img src="demo/embedding_timelapse.gif" alt="AlphaEarth Satellite Embeddings — temporal visualization" width="420" />
 </p>
 
-<h1 align="center">GreenCredit Copilot</h1>
+<h1 align="center">GreenQualify</h1>
 
 <p align="center">
   <strong>Multimodal AI agent for green finance — from a photo and a conversation to a financing recommendation.</strong>
@@ -25,7 +25,7 @@ Small and medium businesses want to go green but face a maze of financing progra
 
 ## The Solution
 
-GreenCredit Copilot is a **multimodal AI agent** that interviews the user by voice, analyzes their building from a photograph, pulls real satellite and solar data, runs physics-based energy calculations, and returns a clear financing recommendation — all in under 60 seconds.
+GreenQualify is a **multimodal AI agent** that interviews the user by voice, analyzes their building from a photograph, pulls real satellite and solar data, runs physics-based energy calculations, and returns a clear financing recommendation — all in under 60 seconds.
 
 ---
 
