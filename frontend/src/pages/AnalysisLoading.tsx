@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { createSession, runAgent, extractAgentText } from "../api/agent";
+import { createSession, runAgent, extractAgentText, type MessagePart } from "../api/agent";
 import type { IntakeFormData } from "../types";
 
 const STATUS_STEPS = [
   "Understanding your business...",
-  "Reviewing uploaded information...",
-  "Estimating project options...",
+  "Analyzing building envelope...",
+  "Estimating heat loss & solar potential...",
   "Matching financing opportunities...",
   "Preparing recommendation...",
 ];
@@ -32,7 +32,23 @@ export default function AnalysisLoading() {
     const userId = `user_${Date.now()}`;
     const sessionId = `session_${Date.now()}`;
 
-    const prompt = [
+    // Build multimodal message parts
+    const imageRaw = sessionStorage.getItem("buildingImage");
+    const hasImage = !!imageRaw;
+
+    const buildingLines = [
+      form.buildingType !== "unknown" ? `Building type: ${form.buildingType}` : "",
+      form.roofType !== "unknown" ? `Roof type: ${form.roofType}` : "",
+      form.wallMaterial !== "unknown" ? `Wall material: ${form.wallMaterial}` : "",
+      form.windowType !== "unknown" ? `Window type: ${form.windowType}` : "",
+      form.footprintArea ? `Footprint area: ${form.footprintArea} m²` : "",
+      form.floorsCount ? `Floors: ${form.floorsCount}` : "",
+      form.floorHeight ? `Floor height: ${form.floorHeight} m` : "",
+    ].filter(Boolean);
+
+    const hasBuildingDetails = buildingLines.length > 0;
+
+    const promptText = [
       `Analyze this business for green financing eligibility:`,
       `Business: ${form.businessName} (${form.businessType})`,
       `Location: ${form.address}`,
@@ -40,11 +56,27 @@ export default function AnalysisLoading() {
       form.annualEnergy ? `Annual energy usage: ${form.annualEnergy} kWh` : "",
       `Budget: ${form.estimatedBudget}`,
       form.sustainabilityGoal ? `Goal: ${form.sustainabilityGoal}` : "",
+      ...(hasImage
+        ? [``, `IMPORTANT: A building photograph is attached. Analyze it visually to identify: wall finish material, wall structure, roof covering, window type, visible insulation signs, cracks, facade degradation, and thermal bridge risks. Use your observations to call the estimate_heat_loss tool with accurate visual feature parameters.`]
+        : []),
+      ...(hasBuildingDetails
+        ? [``, `Building details provided by the user:`, ...buildingLines,
+           ``, `Use the estimate_heat_loss tool with the building details above${hasImage ? " combined with your visual analysis" : ""}. Pass the user-provided values directly as tool arguments.`]
+        : []),
       ``,
       `Provide: recommended financing path, estimated payback period, annual savings, CO2 reduction, and comparison of at least 3 project types.`,
     ]
       .filter(Boolean)
       .join("\n");
+
+    const parts: MessagePart[] = [{ text: promptText }];
+
+    if (hasImage) {
+      const { base64, mimeType } = JSON.parse(imageRaw);
+      parts.push({ inline_data: { mime_type: mimeType, data: base64 } });
+    }
+
+    sessionStorage.removeItem("buildingImage");
 
     const stepInterval = setInterval(() => {
       setActiveStep((s) => Math.min(s + 1, STATUS_STEPS.length - 1));
@@ -54,7 +86,7 @@ export default function AnalysisLoading() {
     (async () => {
       try {
         await createSession(userId, sessionId);
-        const events = await runAgent(userId, sessionId, prompt);
+        const events = await runAgent(userId, sessionId, parts);
         const text = extractAgentText(events);
         sessionStorage.setItem("result", JSON.stringify({ agentText: text, formData: form }));
         setProgress(100);

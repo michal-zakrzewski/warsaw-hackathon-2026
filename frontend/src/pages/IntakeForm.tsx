@@ -10,7 +10,38 @@ const BUSINESS_TYPES = [
   "Non-Profit",
 ];
 
-const STEPS = ["Business Info", "Supporting Info", "Review"];
+const BUILDING_TYPES = [
+  "house",
+  "apartment_block",
+  "office",
+  "warehouse",
+  "industrial",
+  "unknown",
+];
+
+const ROOF_TYPES = ["flat", "gable", "hip", "shed", "mansard", "sawtooth", "unknown"];
+
+const WALL_MATERIALS = [
+  "brick",
+  "concrete",
+  "aac",
+  "timber_frame",
+  "steel_frame",
+  "sandwich_panel",
+  "glass_curtain",
+  "mixed",
+  "unknown",
+];
+
+const WINDOW_TYPES = [
+  "single_glazed",
+  "double_glazed",
+  "triple_glazed",
+  "mixed",
+  "unknown",
+];
+
+const STEPS = ["Business Info", "Building Details", "Review"];
 
 function StepIndicator({ current }: { current: number }) {
   return (
@@ -30,7 +61,7 @@ function StepIndicator({ current }: { current: number }) {
 function Sidebar({ current }: { current: number }) {
   const items = [
     { icon: "business_center", label: "Business Info" },
-    { icon: "upload_file", label: "Add Supporting Info" },
+    { icon: "apartment", label: "Building Details" },
     { icon: "fact_check", label: "Review" },
   ];
   return (
@@ -167,6 +198,7 @@ function AssistantPanel() {
 export default function IntakeForm() {
   const navigate = useNavigate();
   const [step, setStep] = useState(0);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [form, setForm] = useState<IntakeFormData>({
     businessName: "",
     businessType: BUSINESS_TYPES[0],
@@ -176,12 +208,42 @@ export default function IntakeForm() {
     annualEnergy: "",
     estimatedBudget: "$15,000 - $50,000",
     sustainabilityGoal: "",
+    buildingType: "unknown",
+    roofType: "unknown",
+    wallMaterial: "unknown",
+    windowType: "unknown",
+    footprintArea: "",
+    floorsCount: "",
+    floorHeight: "",
   });
 
   const set =
     (field: keyof IntakeFormData) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
       setForm((prev) => ({ ...prev, [field]: e.target.value }));
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = reader.result as string;
+      setImagePreview(dataUrl);
+      // Store base64 separately — keep IntakeFormData small
+      const base64 = dataUrl.split(",")[1];
+      const mimeType = file.type || "image/jpeg";
+      sessionStorage.setItem(
+        "buildingImage",
+        JSON.stringify({ base64, mimeType })
+      );
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const removeImage = () => {
+    setImagePreview(null);
+    sessionStorage.removeItem("buildingImage");
+  };
 
   const next = () => {
     if (step < 2) setStep(step + 1);
@@ -229,7 +291,7 @@ export default function IntakeForm() {
                 {step === 0 &&
                   "Let's start with the basics. This information helps us identify the most relevant green subsidies for your sector."}
                 {step === 1 &&
-                  "Add any supporting documents or additional details to strengthen your application."}
+                  "Tell us about the building — the more you share, the more accurate our heat-loss and energy analysis will be."}
                 {step === 2 && "Review your information before we run the analysis."}
               </p>
               <StepIndicator current={step} />
@@ -373,23 +435,217 @@ export default function IntakeForm() {
               )}
 
               {step === 1 && (
-                <div className="space-y-8">
-                  <div className="border-2 border-dashed border-outline-variant/30 rounded-2xl p-12 text-center">
-                    <span className="material-symbols-outlined text-5xl text-on-surface-variant/40 mb-4 block">
-                      upload_file
-                    </span>
-                    <p className="text-on-surface-variant font-medium mb-2">
-                      Drag & drop files here, or click to browse
-                    </p>
-                    <p className="text-sm text-on-surface-variant/60">
-                      Utility bills, production reports, or crop yield data (PDF, CSV, XLSX)
+                <form className="space-y-8" onSubmit={(e) => e.preventDefault()}>
+                  <div className="flex items-center gap-3 mb-2">
+                    <span className="material-symbols-outlined text-primary text-xl">info</span>
+                    <p className="text-sm text-on-surface-variant">
+                      Upload a building photo for AI-powered visual analysis, or fill in the details manually — or both for the best results.
                     </p>
                   </div>
-                  <p className="text-sm text-on-surface-variant">
-                    Supporting documents are optional but help the AI produce a more accurate
-                    recommendation.
-                  </p>
-                </div>
+
+                  {/* Building Photo Upload */}
+                  <div className="space-y-2">
+                    <label className="block text-sm font-bold text-on-surface-variant ml-1">
+                      Building Photograph
+                    </label>
+                    {!imagePreview ? (
+                      <label className="border-2 border-dashed border-primary/30 rounded-2xl p-8 text-center cursor-pointer hover:border-primary/60 hover:bg-emerald-50/30 transition-all block group">
+                        <input
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp"
+                          className="hidden"
+                          onChange={handleImageUpload}
+                        />
+                        <span className="material-symbols-outlined text-4xl text-primary/40 group-hover:text-primary/70 mb-3 block transition-colors">
+                          add_a_photo
+                        </span>
+                        <p className="text-on-surface-variant font-medium mb-1">
+                          Upload a photo of the building facade
+                        </p>
+                        <p className="text-xs text-on-surface-variant/60">
+                          The AI will analyze wall material, windows, roof, insulation signs, cracks & degradation
+                        </p>
+                      </label>
+                    ) : (
+                      <div className="relative rounded-2xl overflow-hidden border border-surface-container-high">
+                        <img
+                          src={imagePreview}
+                          alt="Building preview"
+                          className="w-full max-h-64 object-cover"
+                        />
+                        <div className="absolute top-3 right-3 flex gap-2">
+                          <button
+                            type="button"
+                            onClick={removeImage}
+                            className="w-10 h-10 rounded-full bg-red-500/90 backdrop-blur-sm flex items-center justify-center text-white hover:bg-red-600 transition-colors shadow-lg"
+                          >
+                            <span className="material-symbols-outlined text-lg">close</span>
+                          </button>
+                        </div>
+                        <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/60 to-transparent px-4 py-3">
+                          <div className="flex items-center gap-2 text-white/90">
+                            <span className="material-symbols-outlined text-sm fill-icon">
+                              check_circle
+                            </span>
+                            <span className="text-xs font-bold">
+                              Photo ready — AI will analyze during assessment
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="relative flex items-center gap-4">
+                    <div className="flex-grow border-t border-surface-container-high" />
+                    <span className="text-xs font-bold text-on-surface-variant/50 uppercase tracking-widest">
+                      or specify manually
+                    </span>
+                    <div className="flex-grow border-t border-surface-container-high" />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <label className="block text-sm font-bold text-on-surface-variant ml-1">
+                        Building Type
+                      </label>
+                      <div className="relative">
+                        <select
+                          className="w-full bg-surface-container-highest/40 border-none rounded-2xl px-5 py-4 focus:ring-2 focus:ring-primary appearance-none transition-all text-on-surface capitalize"
+                          value={form.buildingType}
+                          onChange={set("buildingType")}
+                        >
+                          {BUILDING_TYPES.map((t) => (
+                            <option key={t} value={t}>
+                              {t.replace(/_/g, " ")}
+                            </option>
+                          ))}
+                        </select>
+                        <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-outline">
+                          expand_more
+                        </span>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="block text-sm font-bold text-on-surface-variant ml-1">
+                        Roof Type
+                      </label>
+                      <div className="relative">
+                        <select
+                          className="w-full bg-surface-container-highest/40 border-none rounded-2xl px-5 py-4 focus:ring-2 focus:ring-primary appearance-none transition-all text-on-surface capitalize"
+                          value={form.roofType}
+                          onChange={set("roofType")}
+                        >
+                          {ROOF_TYPES.map((t) => (
+                            <option key={t} value={t}>
+                              {t.replace(/_/g, " ")}
+                            </option>
+                          ))}
+                        </select>
+                        <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-outline">
+                          expand_more
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <label className="block text-sm font-bold text-on-surface-variant ml-1">
+                        Wall Material
+                      </label>
+                      <div className="relative">
+                        <select
+                          className="w-full bg-surface-container-highest/40 border-none rounded-2xl px-5 py-4 focus:ring-2 focus:ring-primary appearance-none transition-all text-on-surface capitalize"
+                          value={form.wallMaterial}
+                          onChange={set("wallMaterial")}
+                        >
+                          {WALL_MATERIALS.map((t) => (
+                            <option key={t} value={t}>
+                              {t.replace(/_/g, " ")}
+                            </option>
+                          ))}
+                        </select>
+                        <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-outline">
+                          expand_more
+                        </span>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="block text-sm font-bold text-on-surface-variant ml-1">
+                        Window Type
+                      </label>
+                      <div className="relative">
+                        <select
+                          className="w-full bg-surface-container-highest/40 border-none rounded-2xl px-5 py-4 focus:ring-2 focus:ring-primary appearance-none transition-all text-on-surface capitalize"
+                          value={form.windowType}
+                          onChange={set("windowType")}
+                        >
+                          {WINDOW_TYPES.map((t) => (
+                            <option key={t} value={t}>
+                              {t.replace(/_/g, " ")}
+                            </option>
+                          ))}
+                        </select>
+                        <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-outline">
+                          expand_more
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="space-y-2">
+                      <label className="block text-sm font-bold text-on-surface-variant ml-1">
+                        Footprint Area
+                      </label>
+                      <div className="relative">
+                        <input
+                          className="w-full bg-surface-container-highest/40 border-none rounded-2xl px-5 py-4 focus:ring-2 focus:ring-primary transition-all text-on-surface placeholder:text-outline/50"
+                          placeholder="e.g. 3000"
+                          type="number"
+                          value={form.footprintArea}
+                          onChange={set("footprintArea")}
+                        />
+                        <span className="absolute right-5 top-1/2 -translate-y-1/2 text-sm font-bold text-emerald-700">
+                          m²
+                        </span>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="block text-sm font-bold text-on-surface-variant ml-1">
+                        Number of Floors
+                      </label>
+                      <input
+                        className="w-full bg-surface-container-highest/40 border-none rounded-2xl px-5 py-4 focus:ring-2 focus:ring-primary transition-all text-on-surface placeholder:text-outline/50"
+                        placeholder="e.g. 1"
+                        type="number"
+                        min="1"
+                        max="50"
+                        value={form.floorsCount}
+                        onChange={set("floorsCount")}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="block text-sm font-bold text-on-surface-variant ml-1">
+                        Floor Height
+                      </label>
+                      <div className="relative">
+                        <input
+                          className="w-full bg-surface-container-highest/40 border-none rounded-2xl px-5 py-4 focus:ring-2 focus:ring-primary transition-all text-on-surface placeholder:text-outline/50"
+                          placeholder="e.g. 7.0"
+                          type="number"
+                          step="0.1"
+                          value={form.floorHeight}
+                          onChange={set("floorHeight")}
+                        />
+                        <span className="absolute right-5 top-1/2 -translate-y-1/2 text-sm font-bold text-emerald-700">
+                          m
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </form>
               )}
 
               {step === 2 && (
@@ -424,6 +680,61 @@ export default function IntakeForm() {
                       </span>
                     </div>
                   ))}
+
+                  {/* Building Photo */}
+                  {imagePreview && (
+                    <div className="pt-2">
+                      <h4 className="text-sm font-bold text-primary uppercase tracking-wider mb-3">
+                        Building Photo
+                      </h4>
+                      <img
+                        src={imagePreview}
+                        alt="Building"
+                        className="w-full max-h-48 object-cover rounded-xl border border-surface-container-high"
+                      />
+                      <p className="text-xs text-on-surface-variant mt-2">
+                        AI will visually analyze this photo for wall material, cracks, insulation signs, and more.
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Building Details subsection */}
+                  {(form.buildingType !== "unknown" ||
+                    form.roofType !== "unknown" ||
+                    form.wallMaterial !== "unknown" ||
+                    form.windowType !== "unknown" ||
+                    form.footprintArea ||
+                    form.floorsCount ||
+                    form.floorHeight) && (
+                    <>
+                      <h4 className="text-sm font-bold text-primary uppercase tracking-wider pt-2">
+                        Building Details
+                      </h4>
+                      {(
+                        [
+                          ["Building Type", form.buildingType !== "unknown" ? form.buildingType.replace(/_/g, " ") : null],
+                          ["Roof Type", form.roofType !== "unknown" ? form.roofType.replace(/_/g, " ") : null],
+                          ["Wall Material", form.wallMaterial !== "unknown" ? form.wallMaterial.replace(/_/g, " ") : null],
+                          ["Window Type", form.windowType !== "unknown" ? form.windowType.replace(/_/g, " ") : null],
+                          ["Footprint Area", form.footprintArea ? `${form.footprintArea} m²` : null],
+                          ["Floors", form.floorsCount || null],
+                          ["Floor Height", form.floorHeight ? `${form.floorHeight} m` : null],
+                        ] as [string, string | null][]
+                      )
+                        .filter(([, v]) => v)
+                        .map(([label, value]) => (
+                          <div
+                            key={label}
+                            className="flex justify-between items-start py-3 border-b border-surface-container-high last:border-none"
+                          >
+                            <span className="text-sm font-bold text-on-surface-variant">{label}</span>
+                            <span className="text-sm text-on-surface text-right max-w-xs capitalize">
+                              {value}
+                            </span>
+                          </div>
+                        ))}
+                    </>
+                  )}
                 </div>
               )}
             </section>
@@ -444,7 +755,7 @@ export default function IntakeForm() {
                 onClick={next}
                 className="px-10 py-5 bg-primary-gradient text-on-primary rounded-full font-bold text-lg shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all flex items-center gap-3"
               >
-                {step === 0 && "Continue to Supporting Info"}
+                {step === 0 && "Continue to Building Details"}
                 {step === 1 && "Continue to Review"}
                 {step === 2 && "Run Analysis"}
                 <span className="material-symbols-outlined">arrow_forward</span>

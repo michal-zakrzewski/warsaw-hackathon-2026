@@ -7,6 +7,14 @@ export interface IntakeFormData {
   annualEnergy: string;
   estimatedBudget: string;
   sustainabilityGoal: string;
+  // Building details (optional, Step 2)
+  buildingType: string;
+  roofType: string;
+  wallMaterial: string;
+  windowType: string;
+  footprintArea: string;
+  floorsCount: string;
+  floorHeight: string;
 }
 
 export interface AnalysisResult {
