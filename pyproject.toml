@@ -9,6 +9,7 @@ authors = [
 requires-python = ">=3.12"
 dependencies = [
     "earthengine-api>=1.7.19",
+    "google-adk>=1.28.0",
 ]
 
 [project.scripts]
