@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import os
 
+from green_agent.heat_loss_tools import estimate_building_geometry, estimate_heat_loss  # noqa: F401
+
 _ee_initialized = False
 _solar_client_instance = None
 
