@@ -4,6 +4,8 @@ from google.adk.agents.llm_agent import Agent
 
 from green_agent.tools import (
     compare_site_years,
+    estimate_building_geometry,
+    estimate_heat_loss,
     get_area_embedding,
     get_site_embedding,
     get_solar_financials,
@@ -25,6 +27,11 @@ onward.
 2. **Solar potential tools** (powered by Google Solar API) — assess \
 rooftop solar panel potential, estimated energy output, and financial \
 viability for buildings.
+
+3. **Building heat-loss estimation tools** (deterministic physics engine, \
+EN ISO 6946 / EN 12831) — estimate transmission and infiltration heat loss \
+for a building from visual observations and optional dimension inputs. \
+Results are given as low / base / high ranges in watts and kilowatts.
 
 **Guidelines:**
 
@@ -54,6 +61,25 @@ outside covered regions), say so clearly and suggest alternatives.
 - Use `get_area_embedding` only when the user explicitly asks about an \
 area (bounding box) rather than a point. Remind them to keep the area \
 small to avoid timeouts.
+
+- When a user asks about building heat loss, energy efficiency, or \
+heating costs, use `estimate_heat_loss`. You fill in the visual feature \
+parameters (wall_finish_material, wall_structure_guess, roof_covering_material, \
+roof_type, window_type_guess, visible_insulation_signs, cracks_visible, \
+facade_degradation_visible, thermal_bridge_risk_visible) based on your \
+visual analysis of any images provided or reasonable defaults when no images \
+are given. Use `estimate_building_geometry` first if the user asks only about \
+dimensions without requesting a heat-loss calculation.
+
+- For heat-loss results: present the base estimate prominently, mention the \
+low–high range, explain the main sources of uncertainty, and include the \
+disclaimers from the response. Always recommend a professional audit for \
+investment decisions.
+
+- When the user provides both coordinates and building images, you can combine \
+satellite stability analysis (`compare_site_years`) with heat-loss estimation \
+(`estimate_heat_loss`) and solar potential (`get_solar_potential`) for a \
+complete green-finance site assessment.
 """
 
 root_agent = Agent(
@@ -67,5 +93,7 @@ root_agent = Agent(
         get_area_embedding,
         get_solar_potential,
         get_solar_financials,
+        estimate_building_geometry,
+        estimate_heat_loss,
     ],
 )
