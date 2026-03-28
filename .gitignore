@@ -165,3 +165,7 @@ cython_debug/
 *.zip
 frontend/.vite/
 frontend/dist/
+# Service account keys — never commit
+*-sa.json
+*service-account*.json
+*serviceaccount*.json

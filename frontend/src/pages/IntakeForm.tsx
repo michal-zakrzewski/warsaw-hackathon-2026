@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { processBills } from "../api/bills";
 import type { IntakeFormData } from "../types";
 
 const BUSINESS_TYPES = [
@@ -167,6 +168,10 @@ function AssistantPanel() {
 export default function IntakeForm() {
   const navigate = useNavigate();
   const [step, setStep] = useState(0);
+  const [billFiles, setBillFiles] = useState<File[]>([]);
+  const [billsProcessing, setBillsProcessing] = useState(false);
+  const [billsError, setBillsError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState<IntakeFormData>({
     businessName: "",
     businessType: BUSINESS_TYPES[0],
@@ -183,11 +188,40 @@ export default function IntakeForm() {
     (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
       setForm((prev) => ({ ...prev, [field]: e.target.value }));
 
-  const next = () => {
-    if (step < 2) setStep(step + 1);
-    else {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) setBillFiles(Array.from(e.target.files));
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    if (e.dataTransfer.files) setBillFiles(Array.from(e.dataTransfer.files));
+  };
+
+  const next = async () => {
+    if (step < 2) {
+      setStep(step + 1);
+      return;
+    }
+    // Step 3 → Run Analysis
+    setBillsProcessing(true);
+    setBillsError(null);
+    try {
+      let billResult = null;
+      if (billFiles.length > 0) {
+        const buildingId = form.businessName.replace(/\s+/g, "-").toLowerCase() || "building";
+        billResult = await processBills(buildingId, billFiles);
+        // Prefill annualEnergy from bills if user left it blank
+        const kwh = billResult.derived_inputs.annual_electricity_kwh;
+        if (kwh && !form.annualEnergy) {
+          setForm((prev) => ({ ...prev, annualEnergy: String(Math.round(kwh)) }));
+        }
+      }
       sessionStorage.setItem("intake", JSON.stringify(form));
+      if (billResult) sessionStorage.setItem("billIntelligence", JSON.stringify(billResult));
       navigate("/loading");
+    } catch (err) {
+      setBillsError(err instanceof Error ? err.message : "Bill processing failed");
+      setBillsProcessing(false);
     }
   };
 
@@ -373,21 +407,52 @@ export default function IntakeForm() {
               )}
 
               {step === 1 && (
-                <div className="space-y-8">
-                  <div className="border-2 border-dashed border-outline-variant/30 rounded-2xl p-12 text-center">
+                <div className="space-y-6">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    multiple
+                    accept=".pdf,image/png,image/jpeg,image/tiff,image/gif,image/webp"
+                    className="hidden"
+                    onChange={handleFileChange}
+                  />
+                  <div
+                    className="border-2 border-dashed border-outline-variant/30 rounded-2xl p-12 text-center cursor-pointer hover:border-primary/40 hover:bg-emerald-50/30 transition-all"
+                    onClick={() => fileInputRef.current?.click()}
+                    onDrop={handleDrop}
+                    onDragOver={(e) => e.preventDefault()}
+                  >
                     <span className="material-symbols-outlined text-5xl text-on-surface-variant/40 mb-4 block">
                       upload_file
                     </span>
                     <p className="text-on-surface-variant font-medium mb-2">
-                      Drag & drop files here, or click to browse
+                      Drag & drop utility bills here, or click to browse
                     </p>
                     <p className="text-sm text-on-surface-variant/60">
-                      Utility bills, production reports, or crop yield data (PDF, CSV, XLSX)
+                      PDF or images (PNG, JPG) — multiple bills welcome
                     </p>
                   </div>
+
+                  {billFiles.length > 0 && (
+                    <ul className="space-y-2">
+                      {billFiles.map((f) => (
+                        <li
+                          key={f.name}
+                          className="flex items-center gap-3 px-4 py-3 bg-emerald-50 rounded-xl text-sm text-emerald-800"
+                        >
+                          <span className="material-symbols-outlined text-base">description</span>
+                          <span className="font-medium truncate">{f.name}</span>
+                          <span className="ml-auto text-emerald-600 text-xs">
+                            {(f.size / 1024).toFixed(0)} KB
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+
                   <p className="text-sm text-on-surface-variant">
-                    Supporting documents are optional but help the AI produce a more accurate
-                    recommendation.
+                    Utility bills are optional but enable accurate energy cost analysis.
+                    The AI extracts consumption, tariff rates, and annual costs automatically.
                   </p>
                 </div>
               )}
@@ -429,26 +494,44 @@ export default function IntakeForm() {
             </section>
 
             {/* Navigation */}
-            <div className="flex items-center justify-between gap-6 pt-4">
-              {step > 0 ? (
-                <button
-                  onClick={prev}
-                  className="px-8 py-4 border border-outline-variant/20 text-on-surface rounded-full font-bold text-lg hover:bg-surface-container-low transition-colors flex items-center gap-2"
-                >
-                  <span className="material-symbols-outlined">arrow_back</span> Back
-                </button>
-              ) : (
-                <div />
+            <div className="flex flex-col gap-3 pt-4">
+              {billsError && (
+                <div className="px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
+                  {billsError}
+                </div>
               )}
-              <button
-                onClick={next}
-                className="px-10 py-5 bg-primary-gradient text-on-primary rounded-full font-bold text-lg shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all flex items-center gap-3"
-              >
-                {step === 0 && "Continue to Supporting Info"}
-                {step === 1 && "Continue to Review"}
-                {step === 2 && "Run Analysis"}
-                <span className="material-symbols-outlined">arrow_forward</span>
-              </button>
+              <div className="flex items-center justify-between gap-6">
+                {step > 0 ? (
+                  <button
+                    onClick={prev}
+                    disabled={billsProcessing}
+                    className="px-8 py-4 border border-outline-variant/20 text-on-surface rounded-full font-bold text-lg hover:bg-surface-container-low transition-colors flex items-center gap-2 disabled:opacity-40"
+                  >
+                    <span className="material-symbols-outlined">arrow_back</span> Back
+                  </button>
+                ) : (
+                  <div />
+                )}
+                <button
+                  onClick={next}
+                  disabled={billsProcessing}
+                  className="px-10 py-5 bg-primary-gradient text-on-primary rounded-full font-bold text-lg shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all flex items-center gap-3 disabled:opacity-60 disabled:scale-100"
+                >
+                  {billsProcessing ? (
+                    <>
+                      <span className="animate-spin material-symbols-outlined text-xl">progress_activity</span>
+                      Processing bills...
+                    </>
+                  ) : (
+                    <>
+                      {step === 0 && "Continue to Supporting Info"}
+                      {step === 1 && "Continue to Review"}
+                      {step === 2 && "Run Analysis"}
+                      <span className="material-symbols-outlined">arrow_forward</span>
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
 
